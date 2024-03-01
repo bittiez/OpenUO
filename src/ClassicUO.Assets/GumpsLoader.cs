@@ -39,6 +39,7 @@ using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using ClassicUO.IO.Audio;
+using Microsoft.Xna.Framework.Graphics;
 
 namespace ClassicUO.Assets
 {
@@ -280,61 +281,20 @@ namespace ClassicUO.Assets
 
         public unsafe GumpInfo GetGump(uint index)
         {
-            if (ResourcesOverride.ContainsKey((int)index)  && Game != null && Game.GraphicsDevice != null)
+            if (ResourcesOverride.ContainsKey((int)index))
             {
+
                 var entry = Texture2D.FromStream(Game.GraphicsDevice, new MemoryStream(ResourcesOverride[(int)index]));
                 uint[] buffer = new uint[entry.Height * entry.Width];
-                ref var spriteInfo = ref _spriteInfos[index];
-                //Span<uint> pixels = entry.Width * entry.Height <= 1024 ? stackalloc uint[1024] : (buffer = System.Buffers.ArrayPool<uint>.Shared.Rent(entry.Width * entry.Height));
-
-                spriteInfo.Texture = entry;
-                spriteInfo.UV = new Rectangle(0, 0, entry.Width, entry.Height);
-
                 Console.WriteLine($"overriding {index} {entry.Width} x {entry.Height}");
-                //Span<uint> pixels = entry.Width * entry.Height <= 1024 ? stackalloc uint[1024] : (buffer = System.Buffers.ArrayPool<uint>.Shared.Rent(entry.Width * entry.Height));
-
                 entry.GetData<uint>(buffer);
-                _picker.Set(index, entry.Width, entry.Height, buffer);
-/*
-            var pixels = new uint[entry.Width * entry.Height];
 
-            int* lookuplist = (int*)dataStart;
-
-            int gsize;
-
-            for (int y = 0, half_len = entry.Length >> 2; y < entry.Height; y++)
-            {
-                if (y < entry.Height - 1)
+                return new GumpInfo()
                 {
-                    gsize = lookuplist[y + 1] - lookuplist[y];
-                }
-                else
-                {
-                    gsize = half_len - lookuplist[y];
-                }
-
-                GumpBlock* gmul = (GumpBlock*)(dataStart + (lookuplist[y] << 2));
-
-                int pos = y * entry.Width;
-
-                for (int i = 0; i < gsize; i++)
-                {
-                    uint val = gmul[i].Value;
-
-                    if (color != 0 && val != 0)
-                    {
-                        val = HuesLoader.Instance.GetColor16(gmul[i].Value, color);
-                    }
-
-                    if (val != 0)
-                    {
-                        //val = 0x8000 | val;
-                        val = HuesHelper.Color16To32(gmul[i].Value) | 0xFF_00_00_00;
-                    }
-
-                    var count = gmul[i].Run;
-                    pixels.AsSpan().Slice(pos, count).Fill(val);
-                    pos += count;*/
+                    Pixels = buffer,
+                    Width = entry.Width,
+                    Height = entry.Height
+                };
             }
             else
             {
@@ -342,7 +302,7 @@ namespace ClassicUO.Assets
 
                 if (entry.Width <= 0 && entry.Height <= 0)
                 {
-                    return;
+                    return default;
                 }
 
                 ushort color = entry.Hue;
@@ -352,75 +312,55 @@ namespace ClassicUO.Assets
 
                 IntPtr dataStart = _file.PositionAddress;
 
-                uint[] buffer = null;
+                var pixels = new uint[entry.Width * entry.Height];
 
-                Span<uint> pixels = entry.Width * entry.Height <= 1024 ? stackalloc uint[1024] : (buffer = System.Buffers.ArrayPool<uint>.Shared.Rent(entry.Width * entry.Height));
+                int* lookuplist = (int*)dataStart;
 
-                try
+                int gsize;
+
+                for (int y = 0, half_len = entry.Length >> 2; y < entry.Height; y++)
                 {
-                    int* lookuplist = (int*)dataStart;
-
-                    int gsize;
-
-                    for (int y = 0, half_len = entry.Length >> 2; y < entry.Height; y++)
+                    if (y < entry.Height - 1)
                     {
-                        if (y < entry.Height - 1)
-                        {
-                            gsize = lookuplist[y + 1] - lookuplist[y];
-                        }
-                        else
-                        {
-                            gsize = half_len - lookuplist[y];
-                        }
-
-                        GumpBlock* gmul = (GumpBlock*)(dataStart + (lookuplist[y] << 2));
-
-                        int pos = y * entry.Width;
-
-                        for (int i = 0; i < gsize; i++)
-                        {
-                            uint val = gmul[i].Value;
-
-                            if (color != 0 && val != 0)
-                            {
-                                val = HuesLoader.Instance.GetColor16(gmul[i].Value, color);
-                            }
-
-                            if (val != 0)
-                            {
-                                //val = 0x8000 | val;
-                                val = HuesHelper.Color16To32(gmul[i].Value) | 0xFF_00_00_00;
-                            }
-
-                            int count = gmul[i].Run;
-
-                            for (int j = 0; j < count; j++)
-                            {
-                                pixels[pos++] = val;
-                            }
-                        }
+                        gsize = lookuplist[y + 1] - lookuplist[y];
+                    }
+                    else
+                    {
+                        gsize = half_len - lookuplist[y];
                     }
 
-                    ref var spriteInfo = ref _spriteInfos[index];
+                    GumpBlock* gmul = (GumpBlock*)(dataStart + (lookuplist[y] << 2));
 
-                    spriteInfo.Texture = atlas.AddSprite(pixels, entry.Width, entry.Height, out spriteInfo.UV);
-                    _picker.Set(index, entry.Width, entry.Height, pixels);
-                }
-                finally
-                {
-                    if (buffer != null)
+                    int pos = y * entry.Width;
+
+                    for (int i = 0; i < gsize; i++)
                     {
-                        System.Buffers.ArrayPool<uint>.Shared.Return(buffer, true);
+                        uint val = gmul[i].Value;
+
+                        if (color != 0 && val != 0)
+                        {
+                            val = HuesLoader.Instance.GetColor16(gmul[i].Value, color);
+                        }
+
+                        if (val != 0)
+                        {
+                            //val = 0x8000 | val;
+                            val = HuesHelper.Color16To32(gmul[i].Value) | 0xFF_00_00_00;
+                        }
+
+                        var count = gmul[i].Run;
+                        pixels.AsSpan().Slice(pos, count).Fill(val);
+                        pos += count;
                     }
                 }
+
+                return new GumpInfo()
+                {
+                    Pixels = pixels,
+                    Width = entry.Width,
+                    Height = entry.Height
+                };
             }
-
-            return new GumpInfo()
-            {
-                Pixels = pixels,
-                Width = entry.Width,
-                Height = entry.Height
-            };
         }
 
         [StructLayout(LayoutKind.Sequential, Pack = 1)]

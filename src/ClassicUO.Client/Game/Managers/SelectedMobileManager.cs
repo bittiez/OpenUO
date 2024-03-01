@@ -42,7 +42,9 @@ namespace ClassicUO.Game.Managers
     internal class SelectedMobileManager
     {
 
+        private readonly World _world;
 
+        public SelectedMobileManager(World world) { _world = world; }
 
         public bool IsEnabled => ProfileManager.CurrentProfile != null && ProfileManager.CurrentProfile.ShowLastTarget;
         public bool SplitLastTargets => ProfileManager.CurrentProfile != null && ProfileManager.CurrentProfile.SplitLastTarget;
@@ -58,24 +60,24 @@ namespace ClassicUO.Game.Managers
                 return;
             }
 
-            if (SerialHelper.IsMobile(TargetManager.LastTargetInfo.Serial))
-                DrawHealthLineWithMath(batcher, TargetManager.LastTargetInfo.Serial, screenW, screenH, 0x7576);
+            if (SerialHelper.IsMobile(_world.TargetManager.LastTargetInfo.Serial))
+                DrawHealthLineWithMath(batcher, _world.TargetManager.LastTargetInfo.Serial, screenW, screenH, 0x7576);
 
             if (SplitLastTargets)
             {
-                if (TargetManager.LastTargetInfo.Serial == TargetManager.LastBeneficialTargetInfo.Serial)
+                if (_world.TargetManager.LastTargetInfo.Serial == _world.TargetManager.LastBeneficialTargetInfo.Serial)
                 {
                     DrawHealthLineWithMath
                     (
-                        batcher, TargetManager.LastBeneficialTargetInfo.Serial, screenW, screenH,
+                        batcher, _world.TargetManager.LastBeneficialTargetInfo.Serial, screenW, screenH,
                         0x7573
                     );
                 }
-                else if (SerialHelper.IsMobile(TargetManager.LastBeneficialTargetInfo.Serial))
+                else if (SerialHelper.IsMobile(_world.TargetManager.LastBeneficialTargetInfo.Serial))
                 {
                     DrawHealthLineWithMath
                     (
-                        batcher, TargetManager.LastBeneficialTargetInfo.Serial, screenW, screenH,
+                        batcher, _world.TargetManager.LastBeneficialTargetInfo.Serial, screenW, screenH,
                         0x7571
                     );
                 }
@@ -84,7 +86,7 @@ namespace ClassicUO.Game.Managers
 
         private void DrawHealthLineWithMath(UltimaBatcher2D batcher, uint serial, int screenW, int screenH, uint indicator)
         {
-            Entity entity = World.Get(serial);
+            Entity entity = _world.Get(serial);
 
             if (entity == null)
             {
@@ -131,7 +133,9 @@ namespace ClassicUO.Game.Managers
 
             const int MULTIPLER = 1;
 
-            var texture = GumpsLoader.Instance.GetGumpTexture(0x756F, out var bounds);
+            ref readonly var gumpInfo = ref Client.Game.UO.Gumps.GetGump(0x756F);
+            var texture = gumpInfo.Texture;
+            var bounds = gumpInfo.UV;
 
 
             batcher.Draw
@@ -147,8 +151,10 @@ namespace ClassicUO.Game.Managers
                 bounds,
                 hueVec
             );
-
-            texture = GumpsLoader.Instance.GetGumpTexture(indicator, out bounds);
+            gumpInfo = ref Client.Game.UO.Gumps.GetGump(indicator);
+            texture = gumpInfo.Texture;
+            bounds = gumpInfo.UV;
+            //texture = GumpsLoader.Instance.GetGumpTexture(indicator, out bounds);
 
 
             batcher.Draw

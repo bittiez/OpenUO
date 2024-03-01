@@ -65,6 +65,9 @@ namespace ClassicUO.Assets
         private readonly Dictionary<int, BodyInfo> _corpseInfos = new Dictionary<int, BodyInfo>();
         private readonly Dictionary<int, BodyConvInfo> _bodyConvInfos = new Dictionary<int, BodyConvInfo>();
         private readonly Dictionary<int, UopInfo> _uopInfos = new Dictionary<int, UopInfo>();
+        private static Tuple<short, short> _OffsetZero = new Tuple<short, short>(0,0);
+        
+        public readonly Dictionary<int,Dictionary<sbyte, Tuple<short, short>>> MountedOffsets = new();
 
         private AnimationsLoader() { }
 
@@ -307,19 +310,34 @@ namespace ClassicUO.Assets
                         int id = int.Parse(parts[0]);
                         short xOffset = short.Parse(parts[1]);
                         short yOffset = short.Parse(parts[2]);
-
-
-                        ref IndexAnimation index = ref _dataIndex[id];
-
-                        if (index == null)
+                        if (!MountedOffsets.ContainsKey(id))
+                            MountedOffsets.Add(id, new Dictionary<sbyte, Tuple<short, short>>() {[-1] = new Tuple<short, short>(0,0)});
+                        if (MountedOffsets.TryGetValue(id, out Dictionary<sbyte, Tuple<short, short>> data))
                         {
-                            index = new IndexAnimation();
+                            if (!data.ContainsKey(direction))
+                                data.Add(direction, new Tuple<short, short>(xOffset, yOffset));
+                            else
+                                data[direction] = new Tuple<short, short>(xOffset, yOffset);
                         }
+                        
+                        //if (AnimationsLoader.Instance.EquipConversions)
 
-                        if (!index.MountedOffsets.ContainsKey(direction))
-                            index.MountedOffsets.Add(direction, new Tuple<short, short>(xOffset, yOffset));
-                        else
-                            index.MountedOffsets[direction] = new Tuple<short, short>(xOffset, yOffset);
+                        //AnimationsLoader.Instance.EquipConversions.TryGetValue(
+                        //    Graphic,
+                        //    out Dictionary<ushort, EquipConvData> map
+                        //)
+
+                        //ref IndexAnimation index = ref _dataIndex[id];
+
+                        //if (index == null)
+                        //{
+                        //    index = new IndexAnimation();
+                        //}
+
+                        //if (!index.MountedOffsets.ContainsKey(direction))
+                        //    index.MountedOffsets.Add(direction, new Tuple<short, short>(xOffset, yOffset));
+                        //else
+                        //    index.MountedOffsets[direction] = new Tuple<short, short>(xOffset, yOffset);
                     }
                 }
             }
@@ -370,13 +388,11 @@ namespace ClassicUO.Assets
             ref ushort hue,
             ref AnimationFlags  flags,
             out int fileIndex,
-            out AnimationGroupsType animType,
-            out sbyte mountHeight
+            out AnimationGroupsType animType
         )
         {
             fileIndex = 0;
             animType = AnimationGroupsType.Unknown;
-            mountHeight = 0;
 
             if (!_mobTypes.TryGetValue(body, out var mobInfo))
             {
@@ -392,7 +408,6 @@ namespace ClassicUO.Assets
                     animType = mobInfo.Type != AnimationGroupsType.Unknown ? mobInfo.Type : CalculateTypeByGraphic(body);
 
                 var replaceFound = _uopInfos.TryGetValue(body, out var uopInfo);
-                mountHeight = uopInfo.HeightOffset;
                 var animIndices = Array.Empty<AnimIdxBlock>();
 
                 for (int actioIdx = 0; actioIdx < MAX_ACTIONS; ++actioIdx)
@@ -428,7 +443,6 @@ namespace ClassicUO.Assets
                 hue = bodyConvInfo.Hue;
                 body = bodyConvInfo.Graphic;
                 fileIndex = bodyConvInfo.FileIndex;
-                mountHeight = bodyConvInfo.MountHeight;
 
                 if (clientVersion < ClientVersion.CV_500A)
                     animType = bodyConvInfo.AnimType;
@@ -689,63 +703,7 @@ namespace ClassicUO.Assets
                             }
                             else if (index == 0x042D)
                             {
-                                _dataIndex[index].Graphic = (ushort)body;
-                                _dataIndex[index].Type = realType;
-
-                                if (!_dataIndex[index].MountedOffsets.ContainsKey(-1))
-                                {
-                                    _dataIndex[index].MountedOffsets.Add(-1, new Tuple<short, short>(0, mountedHeightOffset));
-                                }
-
-                                _dataIndex[index].FileIndex = (byte)i;
-
-                                bool isValid = false;
-                                addressOffset += currentIdxFile.StartAddress.ToInt64();
-                                long maxaddress = currentIdxFile.StartAddress.ToInt64() + currentIdxFile.Length;
-
-                                int offset = 0;
-
-                                if (_dataIndex[index].Groups == null)
-                                {
-                                    _dataIndex[index].Groups = new AnimationGroup[MAX_ACTIONS];
-                                }
-
-                                for (int j = 0; j < count; j++)
-                                {
-                                    if (_dataIndex[index].Groups[j] == null)
-                                    {
-                                        _dataIndex[index].Groups[j] = new AnimationGroup();
-                                    }
-
-                                    for (byte d = 0; d < MAX_DIRECTIONS; d++)
-                                    {
-                                        AnimIdxBlock* aidx = (AnimIdxBlock*)(addressOffset + offset * sizeof(AnimIdxBlock));
-
-                                        ++offset;
-
-                                        if ((long)aidx < maxaddress && aidx->Position != 0xFFFFFFFF && aidx->Size != 0xFFFFFFFF)
-                                        {
-                                            ref var direction = ref _dataIndex[index].Groups[j].Direction[d];
-                                            direction.Address = aidx->Position;
-                                            direction.Size = Math.Max(1, aidx->Size);
-
-                                            isValid = true;
-                                        }
-                                        else
-                                        {
-                                            // we need to nullify the bad address or we will read invalid data.
-                                            // we dont touch the isValid parameter because sometime the mul exists but some frames don't
-                                            // see: https://github.com/ClassicUO/ClassicUO/issues/1532
-                                            ref var direction = ref _dataIndex[index].Groups[j].Direction[d];
-                                            direction.Address = 0;
-                                            direction.Size = 0;
-                                        }
-                                    }
-                                }
-
-                                _dataIndex[index].IsValidMUL = isValid;
-
-                                break;
+                                mountedHeightOffset = 3;
                             }
                         }
 
@@ -760,8 +718,18 @@ namespace ClassicUO.Assets
                             Graphic = (ushort)body,
                             // TODO: fix for UOFileManager.Version < ClientVersion.CV_500A
                             AnimType = CalculateTypeByGraphic((ushort)body, i),
-                            MountHeight = mountedHeightOffset
+                            //MountHeight = mountedHeightOffset
                         };
+                        
+                        if (!MountedOffsets.ContainsKey(index))
+                        {
+                            MountedOffsets.Add(index, new() { [-1] = new Tuple<short, short>(0, mountedHeightOffset)});
+                        }
+                        else
+                        {
+                            if (!MountedOffsets[index].ContainsKey(-1))
+                                MountedOffsets[index].Add(-1, new Tuple<short, short>(0, mountedHeightOffset));
+                        }
                     }
                 }
             }
@@ -999,6 +967,7 @@ namespace ClassicUO.Assets
                         }
                     }
 
+
                     var reader = new StackDataReader(span.Slice(0, entry.DecompressedLength));
 
                     uint animID = reader.ReadUInt32LE();
@@ -1034,18 +1003,22 @@ namespace ClassicUO.Assets
                             || animID == 0x05A1
                         )
                         {
-                            if (animID == 0x04E7 || animID == 0x042D || animID == 0x04E6 || animID == 0x05F7 || animID == 0x05A1)
-                            {
-                                if (!_dataIndex[animID].MountedOffsets.ContainsKey(-1))
-                                    _dataIndex[animID].MountedOffsets.Add(-1, new Tuple<short, short>(0, 18));
-                                //_dataIndex[animID].MountedHeightOffset = 18;
-                            }
-                            else if (animID == 0x01B0 || animID == 0x0579 || animID == 0x05F6 || animID == 0x05A0)
-                            {
-                                if (!_dataIndex[animID].MountedOffsets.ContainsKey(-1))
-                                    _dataIndex[animID].MountedOffsets.Add(-1, new Tuple<short, short>(0, 9));
-                                //_dataIndex[animID].MountedHeightOffset = 9;
-                            }
+                            if (!MountedOffsets.ContainsKey((int)animID))
+                                MountedOffsets.Add( (int)animID, new Dictionary<sbyte, Tuple<short, short>>() );
+                            if (!MountedOffsets[(int)animID].ContainsKey(-1))
+                                MountedOffsets[(int)animID].Add(-1, new Tuple<short, short>(0, 18));
+                        }
+                        else if (
+                            animID == 0x01B0
+                            || animID == 0x0579
+                            || animID == 0x05F6
+                            || animID == 0x05A0
+                        )
+                        {
+                            if (!MountedOffsets.ContainsKey((int)animID))
+                                MountedOffsets.Add( (int)animID, new Dictionary<sbyte, Tuple<short, short>>() );
+                            if (!MountedOffsets[(int)animID].ContainsKey(-1))
+                                MountedOffsets[(int)animID].Add(-1, new Tuple<short, short>(0, 9));
                         }
                     }
 
@@ -1064,18 +1037,12 @@ namespace ClassicUO.Assets
 
             animSeq.Dispose();
         }
-
+        
+        
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static unsafe uint CalculatePeopleGroupOffset(ushort graphic)
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public ANIMATION_GROUPS_TYPE GetAnimType(ushort graphic) => _dataIndex[graphic]?.Type ?? 0;
+        public Tuple<short,short> GetMountedOffset(ushort graphic, sbyte direction) => !MountedOffsets.TryGetValue(graphic, out var data) ? _OffsetZero : data.ContainsKey(direction) ? data[direction] : data[-1];
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public ANIMATION_FLAGS GetAnimFlags(ushort graphic) => _dataIndex[graphic]?.Flags ?? 0;
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public Tuple<short,short> GetMountedOffset(ushort graphic, sbyte direction) => _dataIndex[graphic] == null ? null : _dataIndex[graphic].MountedOffsets.ContainsKey(direction) ? _dataIndex[graphic]?.MountedOffsets[direction] : _dataIndex[graphic]?.MountedOffsets[-1];
-
+        
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static unsafe uint CalculatePeopleGroupOffset(ushort graphic)
         {
@@ -1896,16 +1863,12 @@ namespace ClassicUO.Assets
             Gump = gump;
             Color = color;
         }
-        private static Tuple<short, short> _OffsetZero = new Tuple<short, short>(0,0);
         private byte[] _uopReplaceGroupIndex;
-
-        public bool IsUOP => (Flags & ANIMATION_FLAGS.AF_USE_UOP_ANIMATION) != 0;
 
 
         public ushort Graphic;
         public ushort Gump;
         public ushort Color;
-        public Dictionary<sbyte, Tuple<short, short>> MountedOffsets = new Dictionary<sbyte, Tuple<short, short>>() {[-1] = _OffsetZero};
 
         public override int GetHashCode()
         {
@@ -1941,7 +1904,6 @@ namespace ClassicUO.Assets
         public AnimationGroupsType AnimType;
         public ushort Graphic;
         public ushort Hue;
-        public sbyte MountHeight;
     }
 
     unsafe struct UopInfo
@@ -1959,8 +1921,6 @@ namespace ClassicUO.Assets
                 }
             }
         }
-
-        public sbyte HeightOffset;
     }
 
     [Flags]

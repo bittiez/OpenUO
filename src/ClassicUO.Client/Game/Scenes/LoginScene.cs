@@ -540,8 +540,8 @@ namespace ClassicUO.Game.Scenes
             {
                 NetClient.Socket.Send_Seed_Old(address);
             }
-
             NetClient.Socket.Send_FirstLogin(Account, Password);
+            //NetClient.Socket.Send_OpenUOHello();
         }
 
         private void OnNetClientDisconnected(object sender, SocketError e)
@@ -585,6 +585,21 @@ namespace ClassicUO.Game.Scenes
             for (ushort i = 0; i < count; i++)
             {
                 Servers[i] = ServerListEntry.Create(ref p);
+            }
+
+            //Console.WriteLine(Servers[0].Address);
+            if (Servers.Length > 0)
+            {
+                if (Servers[0].Address == 16843009 || Servers[0].Address == 33620225)
+                {
+                    NetClient.Socket.Send_OpenUOHello();
+                    var newServers = new ServerListEntry[count - 1];
+
+                    for (int i = 1; i < count; i++)
+                        newServers[i - 1] = Servers[i];
+
+                    Servers = newServers;
+                }
             }
 
             CurrentLoginStep = LoginSteps.ServerSelection;

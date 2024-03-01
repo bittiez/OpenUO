@@ -11,18 +11,21 @@ using ClassicUO.Utility.Logging;
 
 namespace ClassicUO.Game.Managers
 {
-    internal static class FriendManager
+    internal sealed class FriendManager
     {
+        private readonly World _world;
+
+        public FriendManager(World world) { _world = world; }
         /// <summary>
         /// Set of Char names
         /// </summary>
-        public static Dictionary<uint, string> FriendList = new Dictionary<uint, string>();
+        public Dictionary<uint, string> FriendList = new Dictionary<uint, string>();
 
         /// <summary>
         /// Initialize Friend Manager
         /// - Load List from XML file
         /// </summary>
-        public static void Initialize()
+        public void Initialize()
         {
             ReadFriendList();
         }
@@ -31,16 +34,16 @@ namespace ClassicUO.Game.Managers
         /// Add Char to friend list
         /// </summary>
         /// <param name="entity">Targeted Entity</param>
-        public static void AddFriendTarget(Entity entity)
+        public void AddFriendTarget(Entity entity)
         {
             //If is mobile, Human and Invul
-            if (entity is Mobile m && m.Serial != World.Player.Serial)
+            if (entity is Mobile m && m.Serial != _world.Player.Serial)
             {
                 var charName = m.Name;
 
                 if (FriendList.ContainsKey(m.Serial))
                 {
-                    GameActions.Print(string.Format(ResGumps.AddToFriendListExist, charName));
+                    GameActions.Print(_world, string.Format(ResGumps.AddToFriendListExist, charName));
                     return;
                 }
 
@@ -49,18 +52,18 @@ namespace ClassicUO.Game.Managers
                 // Redraw list of chars
                 UIManager.GetGump<FriendManagerGump>()?.Redraw();
 
-                GameActions.Print(string.Format(ResGumps.AddToFriendListSuccess, charName));
+                GameActions.Print(_world, string.Format(ResGumps.AddToFriendListSuccess, charName));
                 return;
             }
 
-            GameActions.Print(string.Format(ResGumps.AddToFriendListNotMobile));
+            GameActions.Print(_world, string.Format(ResGumps.AddToFriendListNotMobile));
         }
 
         /// <summary>
         /// Remove Char from Friend List
         /// </summary>
         /// <param name="charName">Char name</param>
-        public static void RemoveFriendTarget(uint id)
+        public void RemoveFriendTarget(uint id)
         {
             if (FriendList.ContainsKey(id))
                 FriendList.Remove(id);
@@ -69,7 +72,7 @@ namespace ClassicUO.Game.Managers
         /// <summary>
         /// Load Friend List from XML file
         /// </summary>
-        private static void ReadFriendList()
+        private void ReadFriendList()
         {
             Dictionary<uint, string> list = new Dictionary<uint, string>();
 
@@ -115,7 +118,7 @@ namespace ClassicUO.Game.Managers
         /// <summary>
         /// Save List to XML File
         /// </summary>
-        public static void SaveFriendList()
+        public void SaveFriendList()
         {
             string friendXmlPath = Path.Combine(ProfileManager.ProfilePath, "friend_list.xml");
 

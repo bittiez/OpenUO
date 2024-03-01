@@ -56,7 +56,7 @@ namespace ClassicUO.Game.UI.Gumps
         private bool _expanding;
         private AlphaBlendControl _alphaBlendControl;
 
-        public EnhancedBuffGump() : base(0, 0)
+        public EnhancedBuffGump(World world) : base(world, 0, 0)
         {
             _expanding = false;
             CanMove = true;
@@ -64,7 +64,7 @@ namespace ClassicUO.Game.UI.Gumps
             AcceptMouseInput = true;
         }
 
-        public EnhancedBuffGump(int x, int y) : this()
+        public EnhancedBuffGump(World world, int x, int y) : this(world)
         {
             X = x;
             Y = y;
@@ -345,14 +345,15 @@ namespace ClassicUO.Game.UI.Gumps
                     _alpha / 255f,
                     true
                 );
+                ref readonly var gumpInfo = ref Client.Game.UO.Gumps.GetGump(Graphic);
+                //var texture = GumpsLoader.Instance.GetGumpTexture(Graphic, out var bounds);
 
-                var texture = GumpsLoader.Instance.GetGumpTexture(Graphic, out var bounds);
-
-                if (texture != null)
+                if (gumpInfo.Texture != null)
                 {
+                    var bounds = gumpInfo.UV;
                     batcher.Draw
                     (
-                        texture,
+                        gumpInfo.Texture,
                         new Vector2(x, y),
                         bounds,
                         hueVec

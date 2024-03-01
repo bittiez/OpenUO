@@ -144,10 +144,9 @@ namespace ClassicUO.Game.Scenes
             _world.Macros.Load();
             _animatedStaticsManager = new AnimatedStaticsManager();
             _animatedStaticsManager.Initialize();
-            InfoBars = new InfoBarManager();
             _world.InfoBars.Load();
             _healthLinesManager = new HealthLinesManager(_world);
-            _selectedMobileManager = new SelectedMobileManager();
+            _selectedMobileManager = new SelectedMobileManager(_world);
             _world.CommandManager.Initialize();
 
             WorldViewportGump viewport = new WorldViewportGump(_world, this);

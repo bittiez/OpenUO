@@ -38,6 +38,7 @@ using ClassicUO.Game.Scenes;
 using ClassicUO.Game.UI.Gumps;
 using ClassicUO.Input;
 using ClassicUO.Assets;
+using ClassicUO.Game.Data;
 using ClassicUO.Resources;
 using ClassicUO.Utility;
 using SDL2;
@@ -53,13 +54,14 @@ namespace ClassicUO.Game.UI.Controls
         private readonly DataBox _databox;
         private readonly HotkeyBox _hotkeyBox;
         private readonly Gumps.Gump _gump;
+        private readonly World _world;
 
         static MacroControl()
         {
-            GenerateNames();
+            GenerateNames(null);
         }
 
-        public static void GenerateNames()
+        public static void GenerateNames(World world)
         {
             var allValues = Enum.GetValues(typeof(MacroType));
             var names = new List<string>();
@@ -73,19 +75,19 @@ namespace ClassicUO.Game.UI.Controls
                 switch (macroType)
                 {
                     case MacroType.EnhancedAbilitiesBySlot:
-                        if (World.Settings.GeneralFlags.EnableEnhancedAbilities && World.Settings.MacroFlags.EnhancedAbilities)
+                        if (world == null || world.Settings.GeneralFlags.EnableEnhancedAbilities && world.Settings.MacroFlags.EnhancedAbilities)
                             goto default;
                         break;
                     case MacroType.SallosTargeting:
-                        if (World.Settings.MacroFlags.AllowSallosTargeting)
+                        if (world == null || world.Settings.MacroFlags.AllowSallosTargeting)
                             goto default;
                         break;
                     case MacroType.UsePotion:
-                        if (!World.Settings.MacroFlags.EnhancedPotionMacros)
+                        if (world == null || !world.Settings.MacroFlags.EnhancedPotionMacros)
                             goto default;
                         break;
                     case MacroType.UsePotionEnhanced:
-                        if (World.Settings.MacroFlags.EnhancedPotionMacros)
+                        if (world == null || world.Settings.MacroFlags.EnhancedPotionMacros)
                             goto default;
                         break;
                     default:
@@ -112,6 +114,7 @@ namespace ClassicUO.Game.UI.Controls
         public MacroControl(Gumps.Gump gump, string name, bool isFastAssign = false)
         {
             CanMove = true;
+            _world = gump.World;
             _gump = gump;
             _hotkeyBox = new HotkeyBox();
             _hotkeyBox.HotkeyChanged += BoxOnHotkeyChanged;
@@ -203,7 +206,7 @@ namespace ClassicUO.Game.UI.Controls
             area.Add(_databox);
 
 
-            Macro = _gump.World.Macros.FindMacro(name) ?? Macro.CreateEmptyMacro(name);
+            Macro = _gump.World.Macros.FindMacro(name) ?? Macro.CreateEmptyMacro(_gump.World, name);
 
             SetupKeyByDefault();
             SetupMacroUI();
@@ -233,11 +236,11 @@ namespace ClassicUO.Game.UI.Controls
                 ob = next;
             }
 
-            MacroObject obj = Macro.Create(MacroType.None);
+            MacroObject obj = Macro.Create(_world, MacroType.None);
 
             Macro.PushToBack(obj);
 
-            _databox.Add(new MacroEntry(this, obj, _enabledMacrosNames));
+            _databox.Add(new MacroEntry(_world, this, obj, _enabledMacrosNames));
             _databox.WantUpdateSize = true;
             _databox.ReArrangeChildren();
         }
@@ -273,14 +276,14 @@ namespace ClassicUO.Game.UI.Controls
 
             if (Macro.Items == null)
             {
-                Macro.Items = Macro.Create(MacroType.None);
+                Macro.Items = Macro.Create( _world, MacroType.None);
             }
 
             MacroObject obj = (MacroObject) Macro.Items;
 
             while (obj != null)
             {
-                _databox.Add(new MacroEntry(this, obj, _enabledMacrosNames));
+                _databox.Add(new MacroEntry(_world, this, obj, _enabledMacrosNames));
 
                 if (obj.Next != null && obj.Code == MacroType.None)
                 {
@@ -442,9 +445,11 @@ namespace ClassicUO.Game.UI.Controls
         {
             private readonly MacroControl _control;
             private readonly string[] _items;
+            private readonly World _world;
 
-            public MacroEntry(MacroControl control, MacroObject obj, string[] items)
+            public MacroEntry(World world, MacroControl control, MacroObject obj, string[] items)
             {
+                _world = world;
                 _control = control;
                 _items = items;
                 int index = 0;
@@ -560,7 +565,7 @@ namespace ClassicUO.Game.UI.Controls
 
                         break;
                     }
-                    case 3:
+                    /*case 3:
                         {
                             int count = 0;
                             int offset = 0;
@@ -624,7 +629,7 @@ namespace ClassicUO.Game.UI.Controls
 
 
                             break;
-                        }
+                        }*/
 
                     case 4:
                         {
@@ -648,18 +653,96 @@ namespace ClassicUO.Game.UI.Controls
                             switch (obj.Code)
                             {
                                 case MacroType.UsePotionEnhanced:
+                                {
+                                    names = new string[_world.Settings.Potions.Count];
+
+                                    for (int i = 0; i < _world.Settings.Potions.Count; i++)
                                     {
-                                        names = new string[World.Settings.Potions.Count];
+                                        names[i] = _world.Settings.Potions[i].Name;
 
-                                        for (int i = 0; i < World.Settings.Potions.Count; i++)
-                                        {
-                                            names[i] = World.Settings.Potions[i].Name;
-
-                                            if (World.Settings.Potions[i].ID == (int)obj.SubCode)
-                                                index = i;
-                                        }
-                                        break;
+                                        if (_world.Settings.Potions[i].ID == (int)obj.SubCode)
+                                            index = i;
                                     }
+                                    break;
+                                }
+                                
+                                case MacroType.CastSpell:
+                                {
+                                    var magery = SpellsMagery.GetAllSpells.Count;
+                                    var bushido = SpellsBushido.GetAllSpells.Count;
+                                    var chiv = SpellsChivalry.GetAllSpells.Count;
+                                    var mastery = SpellsMastery.GetAllSpells.Count;
+                                    var mysticism = SpellsNecromancy.GetAllSpells.Count;
+                                    var ninjitsu = SpellsNinjitsu.GetAllSpells.Count;
+                                    var weaving = SpellsSpellweaving.GetAllSpells.Count;
+                                    names = new string[magery + bushido + chiv + mastery + mysticism + ninjitsu + weaving];
+                                    SpellDefinition.AllSpells = new int[magery + bushido + chiv + mastery + mysticism + ninjitsu + weaving];
+                                    int i = 0;
+                                    foreach (var kvp in SpellsMagery.GetAllSpells)
+                                    {
+                                        names[i] = kvp.Value.Name;
+                                        SpellDefinition.AllSpells[i] = kvp.Value.ID;
+
+                                        if ((int)obj.SubCode == kvp.Value.ID)
+                                            index = i;
+                                        i++;
+                                    }
+                                    foreach (var kvp in SpellsBushido.GetAllSpells)
+                                    {
+                                        names[i] = kvp.Value.Name;
+                                        SpellDefinition.AllSpells[i] = kvp.Value.ID;
+                                        if ((int)obj.SubCode == kvp.Value.ID)
+                                            index = i;
+                                        i++;
+                                    }
+                                    foreach (var kvp in SpellsChivalry.GetAllSpells)
+                                    {
+                                        names[i] = kvp.Value.Name;
+                                        SpellDefinition.AllSpells[i] = kvp.Value.ID;
+                                        if ((int)obj.SubCode == kvp.Value.ID)
+                                            index = i;
+                                        i++;
+                                    }
+                                    foreach (var kvp in SpellsMastery.GetAllSpells)
+                                    {
+                                        names[i] = kvp.Value.Name;
+                                        SpellDefinition.AllSpells[i] = kvp.Value.ID;
+                                        if ((int)obj.SubCode == kvp.Value.ID)
+                                            index = i;
+                                        i++;
+                                    }
+                                    foreach (var kvp in SpellsNecromancy.GetAllSpells)
+                                    {
+                                        names[i] = kvp.Value.Name;
+                                        SpellDefinition.AllSpells[i] = kvp.Value.ID;
+                                        if ((int)obj.SubCode == kvp.Value.ID)
+                                            index = i;
+                                        i++;
+                                    }
+                                    foreach (var kvp in SpellsNinjitsu.GetAllSpells)
+                                    {
+                                        names[i] = kvp.Value.Name;
+                                        SpellDefinition.AllSpells[i] = kvp.Value.ID;
+                                        if ((int)obj.SubCode == kvp.Value.ID)
+                                            index = i;
+                                        i++;
+                                    }
+                                    foreach (var kvp in SpellsSpellweaving.GetAllSpells)
+                                    {
+                                        names[i] = kvp.Value.Name;
+                                        SpellDefinition.AllSpells[i] = kvp.Value.ID;
+                                        if ((int)obj.SubCode == kvp.Value.ID)
+                                            index = i;
+                                        i++;
+                                    }
+
+                                    if (_world.Settings.MacroFlags.EnhancedSpellMacros)
+                                    {
+                                        subNames = new string[] { "None", "Target Last", "Target Self", };
+                                    }
+                                    
+                                    break;
+                                }
 
                                 case MacroType.SallosTargeting:
                                     {
@@ -670,6 +753,7 @@ namespace ClassicUO.Game.UI.Controls
                                         index = (int)obj.SubCode;
                                         break;
                                     }
+
 
                                 case MacroType.EnhancedAbilitiesBySlot:
                                 {
@@ -710,7 +794,11 @@ namespace ClassicUO.Game.UI.Controls
 
                             if (obj.Code == MacroType.UsePotionEnhanced)
                             {
-                                sub.OnOptionSelected += (senderr, ee) => { obj.SubCode = (MacroSubType)World.Settings.Potions[ee].ID; };
+                                sub.OnOptionSelected += (senderr, ee) => { obj.SubCode = (MacroSubType)_world.Settings.Potions[ee].ID; };
+                            }
+                            else if (obj.Code == MacroType.CastSpell)
+                            {
+                                sub.OnOptionSelected += (senderr, ee) => { obj.SubCode = (MacroSubType)SpellDefinition.AllSpells[ee]; };
                             }
                             else
                             {
@@ -736,7 +824,7 @@ namespace ClassicUO.Game.UI.Controls
 
                                 sub.OnOptionSelected += (senderr, ee) =>
                                 {
-                                    Macro.GetSecondaryBoundByCode(obj.Code, ref count, ref offset);
+                                    //Macro.GetSecondaryBoundByCode(obj.Code, ref count, ref offset);
                                     MacroSubType subType = (MacroSubType)(offset + ee);
                                     obj.SubSubCode = subType;
                                 };
@@ -775,7 +863,7 @@ namespace ClassicUO.Game.UI.Controls
                 }
                 else
                 {
-                    MacroObject newMacroObj = Macro.Create((MacroType) e);
+                    MacroObject newMacroObj = Macro.Create(_world, (MacroType) e);
 
                     _control.Macro.Insert(currentMacroObj, newMacroObj);
                     _control.Macro.Remove(currentMacroObj);

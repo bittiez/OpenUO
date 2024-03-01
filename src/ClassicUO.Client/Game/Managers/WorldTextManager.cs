@@ -145,7 +145,7 @@ namespace ClassicUO.Game.Managers
         {
             if (!_damages.TryGetValue(obj, out OverheadDamage dm) || dm == null)
             {
-                dm = new OverheadDamage(World.Get(obj));
+                dm = new OverheadDamage(World, World.Get(obj));
                 _damages[obj] = dm;
             }
 

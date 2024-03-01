@@ -47,10 +47,6 @@ namespace ClassicUO.Renderer.Animations
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public AnimationFlags  GetAnimFlags(ushort graphic) => _dataIndex[graphic]?.Flags ?? 0;
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public sbyte GetMountedHeightOffset(ushort graphic) =>
-            _dataIndex[graphic]?.MountedHeightOffset ?? 0;
-
         public bool PixelCheck(
             ushort animID,
             byte group,
@@ -155,8 +151,7 @@ namespace ClassicUO.Renderer.Animations
                         ref hue,
                         ref index.Flags, 
                         out index.FileIndex,
-                        out index.Type,
-                        out index.MountedHeightOffset
+                        out index.Type
                     );
 
                     if (!indices.IsEmpty)

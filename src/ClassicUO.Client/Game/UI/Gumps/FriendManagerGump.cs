@@ -28,7 +28,7 @@ namespace ClassicUO.Game.UI.Gumps
             ADD_NEW_FRIEND,
         }
 
-        public FriendManagerGump() : base(0, 0)
+        public FriendManagerGump(World world) : base(world, 0, 0)
         {
             CanMove = true;
 
@@ -138,10 +138,10 @@ namespace ClassicUO.Game.UI.Gumps
         public override void Dispose()
         {
             if (_isListModified)
-                FriendManager.SaveFriendList();
+                World.FriendManager.SaveFriendList();
 
-            if (TargetManager.IsTargeting)
-                TargetManager.CancelTarget();
+            if (World.TargetManager.IsTargeting)
+                World.TargetManager.CancelTarget();
 
             base.Dispose();
         }
@@ -158,7 +158,7 @@ namespace ClassicUO.Game.UI.Gumps
             );
 
             var y = 0;
-            foreach (FriendListControl element in FriendManager.FriendList.Select(m => new FriendListControl(m.Value, m.Key) { Y = y }))
+            foreach (FriendListControl element in World.FriendManager.FriendList.Select(m => new FriendListControl(World, m.Value, m.Key) { Y = y }))
             {
                 element.RemoveMarkerEvent += MarkerRemoveEventHandler;
 
@@ -199,7 +199,7 @@ namespace ClassicUO.Game.UI.Gumps
             switch (buttonId)
             {
                 case (int)ButtonsId.ADD_NEW_FRIEND:
-                    TargetManager.SetTargeting(CursorTarget.FriendTarget, CursorType.Target, TargetType.Neutral);
+                    World.TargetManager.SetTargeting(CursorTarget.FriendTarget, CursorType.Target, TargetType.Neutral);
                     break;
             }
         }
@@ -208,16 +208,18 @@ namespace ClassicUO.Game.UI.Gumps
         {
             private readonly string _chName;
             private readonly uint _chSerial;
+            private readonly World _world;
 
             public event EventHandler RemoveMarkerEvent;
 
-            public FriendListControl(string chName, uint serial)
+            public FriendListControl(World world, string chName, uint serial)
             {
                 CanMove = true;
                 AcceptMouseInput = false;
                 CanCloseWithRightClick = true;
                 _chName = chName;
                 _chSerial = serial;
+                _world = world;
 
                 Add(new Label(chName, true, HUE_FONT, 290) { X = 10 });
 
@@ -226,7 +228,7 @@ namespace ClassicUO.Game.UI.Gumps
 
             public override void OnButtonClick(int buttonId)
             {
-                FriendManager.RemoveFriendTarget(_chSerial);
+                _world.FriendManager.RemoveFriendTarget(_chSerial);
                 RemoveMarkerEvent.Raise();
             }
         }

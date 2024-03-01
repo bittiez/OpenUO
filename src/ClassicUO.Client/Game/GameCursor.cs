@@ -418,7 +418,7 @@ namespace ClassicUO.Game
                     _aura.Draw(sb, Mouse.Position.X, Mouse.Position.Y, hue, 0f);
                 }
                 
-                if (TargetManager.Preview > 0)
+                if (_world.TargetManager.Preview > 0)
                 {
                     float scale = 1;
 
@@ -426,29 +426,30 @@ namespace ClassicUO.Game
                     {
                         scale = UIManager.ContainerScale;
                     }
-                    var texture = ArtLoader.Instance.GetStaticTexture((uint)TargetManager.Preview, out var bounds);
 
-                    if (texture != null)
+                    ref readonly var artInfo = ref Client.Game.UO.Arts.GetArt((uint)_world.TargetManager.Preview);//ArtLoader.Instance.Get((uint)_world.TargetManager.Preview);
+                    
+                    if (artInfo.Texture != null)
                     {
 
                         int x = (Mouse.Position.X) + 20;
                         int y = (Mouse.Position.Y) + -20;
 
-                        Vector3 hue = ShaderHueTranslator.GetHueVector(TargetManager.PreviewHue, false, false ? .5f : 1f);
+                        Vector3 hue = ShaderHueTranslator.GetHueVector(_world.TargetManager.PreviewHue, false, false ? .5f : 1f);
 
                         var rect = new Rectangle
                         (
                             x,
                             y,
-                            (int)(bounds.Width * scale),
-                            (int)(bounds.Height * scale)
+                            (int)(artInfo.UV.Width * scale),
+                            (int)(artInfo.UV.Height * scale)
                         );
 
                         sb.Draw
                         (
-                            texture,
+                            artInfo.Texture,
                             rect,
-                            bounds,
+                            artInfo.UV,
                             hue
                         );
                     }

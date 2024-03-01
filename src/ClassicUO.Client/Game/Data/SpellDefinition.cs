@@ -54,6 +54,7 @@ namespace ClassicUO.Game.Data
 
         internal static Dictionary<string, SpellDefinition> WordToTargettype = new Dictionary<string, SpellDefinition>();
 
+        public static int[] AllSpells;
 
         public SpellDefinition
         (
@@ -110,17 +111,77 @@ namespace ClassicUO.Game.Data
         public SpellDefinition
         (
             string name,
+            int spellCircle,
             int index,
             int gumpIconID,
+            int tooltipCliloc,
             string powerwords,
             TargetType target,
             params Reagents[] regs
         )
         {
+            TooltipCliloc = tooltipCliloc;
             Name = name;
+            SpellCircle = spellCircle;
             ID = index;
             GumpIconID = gumpIconID;
             GumpIconSmallID = gumpIconID - 0x1298;
+            Regs = regs;
+            ManaCost = 0;
+            MinSkill = 0;
+            TithingCost = 0;
+            PowerWords = powerwords;
+            TargetType = target;
+            AddToWatchedSpell();
+        }
+        
+        public SpellDefinition
+        (
+            string name,
+            int spellCircle,
+            int index,
+            int gumpIconID,
+            string tooltip,
+            string powerwords,
+            TargetType target,
+            params Reagents[] regs
+        )
+        {
+            Tooltip = tooltip;
+            Name = name;
+            SpellCircle = spellCircle;
+            ID = index;
+            GumpIconID = gumpIconID;
+            GumpIconSmallID = gumpIconID - 0x1298;
+            Regs = regs;
+            ManaCost = 0;
+            MinSkill = 0;
+            TithingCost = 0;
+            PowerWords = powerwords;
+            TargetType = target;
+            AddToWatchedSpell();
+        }
+        
+        public SpellDefinition
+        (
+            string name,
+            int spellCircle,
+            int index,
+            int gumpIconID,
+            string tooltip,
+            string powerwords,
+            TargetType target,
+            string[] reagents,
+            params Reagents[] regs
+        )
+        {
+            Reags = reagents;
+            Tooltip = tooltip;
+            Name = name;
+            SpellCircle = spellCircle;
+            ID = index;
+            GumpIconID = gumpIconID;
+            GumpIconSmallID = gumpIconID;
             Regs = regs;
             ManaCost = 0;
             MinSkill = 0;
@@ -135,15 +196,19 @@ namespace ClassicUO.Game.Data
             return ID.Equals(other.ID);
         }
 
+        public readonly int SpellCircle;
         public readonly int GumpIconID;
         public readonly int GumpIconSmallID;
         public readonly int ID;
         public readonly int ManaCost;
         public readonly int MinSkill;
+        public readonly int TooltipCliloc;
+        public readonly string Tooltip;
 
         public readonly string Name;
         public readonly string PowerWords;
         public readonly Reagents[] Regs;
+        public readonly string[] Reags;
         public readonly TargetType TargetType;
         public readonly int TithingCost;
 
@@ -163,7 +228,10 @@ namespace ClassicUO.Game.Data
         public string CreateReagentListString(string separator)
         {
             ValueStringBuilder sb = new ValueStringBuilder();
+
             {
+                if (Reags != null)
+                    return string.Join('\n', Reags);
                 for (int i = 0; i < Regs.Length; i++)
                 {
                     switch (Regs[i])

@@ -31,6 +31,7 @@
 #endregion
 
 using System;
+using ClassicUO.Game.GameObjects;
 
 namespace ClassicUO.Game.Data
 {
@@ -41,9 +42,9 @@ namespace ClassicUO.Game.Data
         public const int STEP_DELAY_RUN = 200;
         public const int STEP_DELAY_WALK = 400;
 
-        public static int TimeToCompleteMovement(bool run, bool mounted)
+        public static int TimeToCompleteMovement(Mobile player, bool run, bool mounted)
         {
-            return run ? World.Player.RunningMoveSpeed : World.Player.WalkingMoveSpeed;
+            return run ? player.RunningMoveSpeed : player.WalkingMoveSpeed;
         }
 
         public static void GetPixelOffset(byte dir, ref float x, ref float y, float framesPerTile)

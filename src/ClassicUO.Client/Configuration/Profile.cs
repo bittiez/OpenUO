@@ -42,6 +42,7 @@ using ClassicUO.Configuration.Json;
 using ClassicUO.Game;
 using ClassicUO.Game.GameObjects;
 using ClassicUO.Game.Managers;
+using ClassicUO.Game.Scenes;
 using ClassicUO.Game.UI.Gumps;
 using ClassicUO.Utility.Logging;
 using Microsoft.Xna.Framework;
@@ -565,7 +566,7 @@ namespace ClassicUO.Configuration
                                     break;
                                 
                                 case GumpType.CooldownTimers:
-                                    gump = new CooldownTimersGump();
+                                    gump = new CooldownTimersGump(world);
 
                                     break;
 
@@ -629,7 +630,8 @@ namespace ClassicUO.Configuration
                                     break;
 
                                 case GumpType.SpellBook:
-                                    gump = new SpellbookGump(world);
+                                    //gump = new SpellbookGump(world);
+                                    Client.Game.GetScene<GameScene>().DoubleClickDelayed(serial);
 
                                     break;
 

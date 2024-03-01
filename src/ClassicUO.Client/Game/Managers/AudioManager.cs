@@ -192,13 +192,14 @@ namespace ClassicUO.Game.Managers
                 return;
             }
 
-            float volume = currentProfile.SoundVolume / SoundsLoader.SOUND_DELTA;
+            
+            float volume = currentProfile.SoundVolume / SOUND_DELTA;
 
             if (Client.Game.IsActive)
             {
                 if (!currentProfile.ReproduceSoundsInBackground)
                 {
-                    volume = currentProfile.SoundVolume / SoundsLoader.SOUND_DELTA;
+                    volume = currentProfile.SoundVolume / SOUND_DELTA;
                 }
             }
             else if (!currentProfile.ReproduceSoundsInBackground)
@@ -235,7 +236,7 @@ namespace ClassicUO.Game.Managers
             {
                 return;
             }
-            Sound m = SoundsLoader.Instance.GetMusic(music);
+            Sound m = Client.Game.UO.Sounds.GetMusic(music);
             PlayMusic(m, music, iswarmode, is_login);
         }
         
@@ -276,8 +277,6 @@ namespace ClassicUO.Game.Managers
             {
                 return;
             }
-
-            Sound m = Client.Game.UO.Sounds.GetMusic(music);
 
             if (m == null && _currentMusic[0] != null)
             {

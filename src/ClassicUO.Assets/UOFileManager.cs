@@ -107,7 +107,7 @@ namespace ClassicUO.Assets
             {
                 AnimationsLoader.Instance.LoadMountData();
                 LastMountDataModified = mountDataInfo;
-                Console.WriteLine("Reloading Clilocs");
+                Console.WriteLine("Reloading Mount Data");
             }
         }
 

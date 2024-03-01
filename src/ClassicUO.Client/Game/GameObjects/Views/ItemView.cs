@@ -171,7 +171,7 @@ namespace ClassicUO.Game.GameObjects
                 }
             }
 
-            if (TargetManager.AreaOfEffectHighlight(X, Y, HighlightType.Item, out ushort rehue))
+            if (World.TargetManager.AreaOfEffectHighlight(X, Y, HighlightType.Item, out ushort rehue))
             {
                 partial = false;
                 hue = rehue;

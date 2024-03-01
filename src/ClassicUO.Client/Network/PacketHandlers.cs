@@ -674,14 +674,14 @@ namespace ClassicUO.Network
 
                         if (type >= 4) //AOS
                         {
-                            World.Player.FireResistance = (short)p.ReadInt16BE();
-                            World.Player.ColdResistance = (short)p.ReadInt16BE();
-                            World.Player.PoisonResistance = (short)p.ReadInt16BE();
-                            World.Player.EnergyResistance = (short)p.ReadInt16BE();
-                            World.Player.Luck = p.ReadUInt16BE();
-                            World.Player.DamageMin = (short)p.ReadUInt16BE();
-                            World.Player.DamageMax = (short)p.ReadUInt16BE();
-                            World.Player.TithingPoints = p.ReadUInt32BE();
+                            world.Player.FireResistance = (short)p.ReadInt16BE();
+                            world.Player.ColdResistance = (short)p.ReadInt16BE();
+                            world.Player.PoisonResistance = (short)p.ReadInt16BE();
+                            world.Player.EnergyResistance = (short)p.ReadInt16BE();
+                            world.Player.Luck = p.ReadUInt16BE();
+                            world.Player.DamageMin = (short)p.ReadUInt16BE();
+                            world.Player.DamageMax = (short)p.ReadUInt16BE();
+                            world.Player.TithingPoints = p.ReadUInt32BE();
                         }
 
                         if (type >= 6)
@@ -1344,10 +1344,55 @@ namespace ClassicUO.Network
                     return;
                 }
 
-                UIManager.GetGump<SpellbookGump>(serial)?.Dispose();
+                UIManager.GetGump<BaseSpellbookGump>(serial)?.Dispose();
 
-                SpellbookGump spellbookGump = new SpellbookGump(world, spellBookItem);
+                Type type = typeof(MagerySpellbookGump);
+                
+                switch (spellBookItem.Graphic)
+                {
+                    case 0x2253:
+                        type = typeof(NecromancySpellbookGump);
+                        break;
 
+                    case 0x2252:
+                        type = typeof(ChivalrySpellbookGump);
+                        break;
+
+                    case 0x238C:
+
+                        if ((world.ClientFeatures.Flags & CharacterListFlags.CLF_SAMURAI_NINJA) != 0)
+                        {
+                            type = typeof(BushidoSpellbookGump);
+                        }
+                        break;
+
+                    case 0x23A0:
+
+                        if ((world.ClientFeatures.Flags & CharacterListFlags.CLF_SAMURAI_NINJA) != 0)
+                        {
+                            type = typeof(NinjitsuSpellbookGump);
+                        }
+                        break;
+
+                    case 0x2D50:
+                        type = typeof(SpellweavingSpellbookGump);
+                        break;
+
+                    case 0x2D9D:
+                        type = typeof(MysticismSpellbookGump);
+                        break;
+
+                    case 0x225A:
+                    case 0x225B:
+                        type = typeof(MasterySpellbookGump);
+                        break;
+                }
+                
+                BaseSpellbookGump spellbookGump = (BaseSpellbookGump)Activator.CreateInstance(type, [world, (uint)spellBookItem]);
+
+                if (spellbookGump == null)
+                    return;
+                
                 if (!UIManager.GetGumpCachePosition(spellBookItem, out Point location))
                 {
                     location = new Point(64, 64);
@@ -4547,7 +4592,7 @@ namespace ClassicUO.Network
                         }
                     }
 
-                    UIManager.GetGump<SpellbookGump>(spellbook)?.RequestUpdateContents();
+                    UIManager.GetGump<BaseSpellbookGump>(spellbook)?.RequestUpdateContents();
 
                     break;
 
@@ -5513,7 +5558,7 @@ namespace ClassicUO.Network
             if (iconID < BuffTable.Table.Length)
             {
                 Gump gump = null;
-                var enhanced = World.Settings.GeneralFlags.EnhancedBuffInformation;
+                var enhanced = world.Settings.GeneralFlags.EnhancedBuffInformation;
                 if (enhanced)
                     gump = UIManager.GetGump<EnhancedBuffGump>();
                 else
@@ -5523,9 +5568,9 @@ namespace ClassicUO.Network
                 if (count == 0)
                 {
                     if (enhanced)
-                        World.Player.RemoveBuff((uint)ic);
+                        world.Player.RemoveBuff((uint)ic);
                     else
-                        World.Player.RemoveBuff(ic);
+                        world.Player.RemoveBuff(ic);
                     gump?.RequestUpdateContents();
                 }
                 else
@@ -5592,11 +5637,11 @@ namespace ClassicUO.Network
                         }
 
                         string text = $"<left>{title}{description}{wtf}</left>";
-                        bool alreadyExists = World.Player.IsBuffIconExists(ic);
+                        bool alreadyExists = world.Player.IsBuffIconExists(ic);
                         if (!enhanced)
-                            World.Player.AddBuff(ic, BuffTable.Table[iconID], timer, text);
+                            world.Player.AddBuff(ic, BuffTable.Table[iconID], timer, text);
                         else
-                            World.Player.AddBuff((uint)ic, 1, BuffTable.Table[iconID], timer, text);
+                            world.Player.AddBuff((uint)ic, 1, BuffTable.Table[iconID], timer, text);
 
                         if (!alreadyExists)
                         {
@@ -6125,7 +6170,7 @@ namespace ClassicUO.Network
                 }
                 else
                 {
-                    gump = UIManager.GetGump<SpellbookGump>(containerSerial);
+                    gump = UIManager.GetGump<BaseSpellbookGump>(containerSerial);
 
                     if (gump == null)
                     {
@@ -6604,13 +6649,6 @@ namespace ClassicUO.Network
                 {
                     gump.Add(new Button(gparams), page);
                 }
-                else if (
-                    string.Equals(
-                        entry,
-                        "buttontileart",
-                        StringComparison.InvariantCultureIgnoreCase
-                    )
-                )
                 else if (string.Equals(entry, "gumpanimatedmobile", StringComparison.InvariantCultureIgnoreCase))
                 {
                     if (gparams.Count < 6)

@@ -122,7 +122,7 @@ namespace ClassicUO.Game.GameObjects
         
         public void Add(byte font, ushort hue, string rollingText)
         {
-            TextObject text_obj = TextObject.Create();
+            TextObject text_obj = TextObject.Create(_world);
 
             text_obj.RenderedText = RenderedText.Create(rollingText, hue, font, false);
             

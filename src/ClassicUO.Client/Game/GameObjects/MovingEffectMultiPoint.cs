@@ -41,6 +41,7 @@ namespace ClassicUO.Game.GameObjects
     {        
         public MovingEffectMultiPoint
         (
+            World world,
             EffectManager manager,
             uint src,
             ushort xSource,
@@ -53,7 +54,7 @@ namespace ClassicUO.Game.GameObjects
             byte speed,
             short spinning,
             List<Tuple<TimeSpan, Vector3>> points
-        ) : base(manager, graphic, hue, 0, speed)
+        ) : base(world, manager, graphic, hue, 0, speed)
         {
             FixedDir = fixedDir;
 

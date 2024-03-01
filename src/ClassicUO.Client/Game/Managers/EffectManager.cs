@@ -168,6 +168,7 @@ namespace ClassicUO.Game.Managers
 
                     effect = new MovingEffectTimed
                     (
+                        _world,
                         this,
                         source,
                         target,
@@ -206,6 +207,7 @@ namespace ClassicUO.Game.Managers
 
                     effect = new MovingEffectMultiPoint
                     (
+                        _world,
                         this,
                         source,
                         srcX,

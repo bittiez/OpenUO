@@ -40,6 +40,7 @@ namespace ClassicUO.Game.GameObjects
     {        
         public MovingEffectTimed
         (
+            World world,
             EffectManager manager,
             uint src,
             uint trg,
@@ -55,7 +56,7 @@ namespace ClassicUO.Game.GameObjects
             int duration,
             byte speed,
             TimeSpan durationToTarget, short spinning
-        ) : base(manager, graphic, hue, duration, speed)
+        ) : base(world, manager, graphic, hue, duration, speed)
         {
             _DurationToTarget = durationToTarget;
             FixedDir = fixedDir;

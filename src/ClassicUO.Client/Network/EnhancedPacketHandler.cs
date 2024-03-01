@@ -23,10 +23,12 @@ internal class EnhancedPacketHandler
 {
     static EnhancedPacketHandler()
     {
+        Handler.Add(0, FeaturePacket);
         Handler.Add(1, SettingsPacket);
         Handler.Add(2, DefaultMovementSpeedPacket);
         Handler.Add(3, EnhancedPotionMacrosPacket);
         Handler.Add(4, GeneralSettings);
+        Handler.Add(5, EnhancedSpellbookSettings);
 
         
         
@@ -46,9 +48,11 @@ internal class EnhancedPacketHandler
         //Handler.Add(200, EnhancedGraphicEffect);
         Handler.Add(201, EnhancedEffectMultiPoint);
         Handler.Add(200, EnhancedGraphicEffect);
+        Handler.Add(205, EnhancedSpellbookContent);
+        Handler.Add(206, CloseContainer);
     }
-    
-    private static void PacketTemplate(ref StackDataReader p, int version)
+
+    private static void PacketTemplate(World world, ref StackDataReader p, int version)
     {
         switch (version)
         {
@@ -60,154 +64,332 @@ internal class EnhancedPacketHandler
         }
     }
     
-        private static void EnhancedGraphicEffect(ref StackDataReader p, int version)
+    private static void CloseContainer(World world, ref StackDataReader p, int version)
+    {
+        switch (version)
         {
-            switch (version)
+            case 0:
             {
-                case 0:
-                {
-                    if (World.Player == null)
-                    {
-                        return;
-                    }
-                    GraphicEffectType type = (GraphicEffectType)p.ReadUInt8();
+                break;
+            }
+            default: InvalidVersionReceived( ref p ); break;
+        }
+    }
 
-                    uint source = p.ReadUInt32BE();
-                    uint target = p.ReadUInt32BE();
-                    ushort graphic = p.ReadUInt16BE();
-                    ushort srcX = p.ReadUInt16BE();
-                    ushort srcY = p.ReadUInt16BE();
-                    sbyte srcZ = p.ReadInt8();
+    private static void EnhancedSpellbookContent(World world, ref StackDataReader p, int version)
+    {
+        switch (version)
+        {
+            case 0:
+            {
+                Item spellbook = world.GetOrCreateItem(p.ReadUInt32BE());
+                spellbook.Graphic = p.ReadUInt16BE();
+                spellbook.Clear();
+                ushort type = p.ReadUInt16BE();
+
+                for (int j = 0; j < 2; j++)
+                {
+                    uint spells = 0;
+
+                    for (int i = 0; i < 4; i++)
+                    {
+                        spells |= (uint)(p.ReadUInt8() << (i * 8));
+                    }
+
+                    for (int i = 0; i < 32; i++)
+                    {
+                        if ((spells & (1 << i)) != 0)
+                        {
+                            ushort cc = (ushort)(j * 32 + i + 1);
+                            // FIXME: should i call Item.Create ?
+                            Item spellItem = Item.Create(world, cc); // new Item()
+                            spellItem.Serial = cc;
+                            spellItem.Graphic = 0x1F2E;
+                            spellItem.Amount = cc;
+                            spellItem.Container = spellbook;
+                            spellbook.PushToBack(spellItem);
+                        }
+                    }
+                }
+                
+                for (int j = 0; j < 2; j++)
+                {
+                    uint spells = 0;
+
+                    for (int i = 0; i < 4; i++)
+                    {
+                        spells |= (uint)(p.ReadUInt8() << (i * 8));
+                    }
+
+                    for (int i = 0; i < 32; i++)
+                    {
+                        if ((spells & (1 << i)) != 0)
+                        {
+                            ushort cc = (ushort)(j * 32 + i + 1);
+                            cc += 64;
+                            // FIXME: should i call Item.Create ?
+                            Item spellItem = Item.Create(world, cc); // new Item()
+                            spellItem.Serial = cc;
+                            spellItem.Graphic = 0x1F2E;
+                            spellItem.Amount = cc;
+                            spellItem.Container = spellbook;
+                            spellbook.PushToBack(spellItem);
+                        }
+                    }
+                }
+
+                //spellbook.
+
+                UIManager.GetGump<BaseSpellbookGump>(spellbook)?.RequestUpdateContents();
+
+                break;
+            }
+            default: InvalidVersionReceived( ref p ); break;
+        }
+    }
+
+    private static void FeaturePacket(World world, ref StackDataReader p, int version)
+    {
+        switch (version)
+        {
+            case 0:
+            {
+                GameActions.SendOpenUOHello();
+                break;
+            }
+            default: InvalidVersionReceived( ref p ); break;
+        }
+    }
+
+    private static void EnhancedSpellbookSettings(World world, ref StackDataReader p, int version)
+    {
+        SpellsMagery.Clear();
+        switch (version)
+        {
+            case 0:
+            {
+                int count = p.ReadInt32BE();
+
+                for (int i = 0; i < count; i++)
+                {
+                    ushort id = p.ReadUInt16BE();
+                    byte circle = p.ReadUInt8();
+                    ushort gumpid = p.ReadUInt16BE();
+                    string name;
+                    string tooltips;
+                    string powerwords;
+
+                    if (p.ReadBool())
+                    {
+                        name = ClilocLoader.Instance.GetString(p.ReadInt32BE());
+                    }
+                    else
+                    {
+                        ushort len = p.ReadUInt16BE();
+                        name = p.ReadASCII(len);
+                    }
+                    
+                    if (p.ReadBool())
+                    {
+                        tooltips = ClilocLoader.Instance.GetString(p.ReadInt32BE());
+                    }
+                    else
+                    {
+                        ushort len = p.ReadUInt16BE();
+                        tooltips = p.ReadASCII(len);
+                    }
+                    
+                    if (p.ReadBool())
+                    {
+                        powerwords = ClilocLoader.Instance.GetString(p.ReadInt32BE());
+                    }
+                    else
+                    {
+                        ushort len = p.ReadUInt16BE();
+                        powerwords = p.ReadASCII(len);
+                    }
+
+                    List<Reagents> regs = new List<Reagents>();
+                    string[] reags = new string[p.ReadUInt8()];
+                    for (int j = 0; j < reags.Length; j++)
+                    {
+                        int cliloc = p.ReadInt32BE();
+                        reags[j] = ClilocLoader.Instance.GetString(cliloc);//reag;
+
+                        switch (cliloc)
+                        {
+                            case 1015004: regs.Add(Reagents.Bloodmoss); break;
+                            case 1015016: regs.Add(Reagents.Nightshade); break; 
+                            case 1015021: regs.Add(Reagents.Garlic); break;
+                            case 1015009: regs.Add(Reagents.Ginseng); break;
+                            case 1015013: regs.Add(Reagents.MandrakeRoot); break;
+                            case 1015007: regs.Add(Reagents.SpidersSilk); break;
+                            case 1044359: regs.Add(Reagents.SulfurousAsh); break;
+                            case 1015001: regs.Add(Reagents.BlackPearl); break;
+                        }
+                    }
+
+                    TargetType targetFlags = (TargetType) p.ReadUInt8();
+                    SpellsMagery.SetSpell(id, new SpellDefinition(name, circle, id, gumpid, tooltips, powerwords, targetFlags, reags, regs.ToArray() ));
+                }
+
+                var buttons = UIManager.Gumps.OfType<UseSpellButtonGump>().ToList();
+                foreach (var gump in buttons)
+                    gump.Rebuild();
+                break;
+            }
+            default: InvalidVersionReceived( ref p ); break;
+        }
+    }
+
+    private static void EnhancedGraphicEffect(World world, ref StackDataReader p, int version)
+    {
+        switch (version)
+        {
+            case 0:
+            {
+                //if (world.PlayableArea == null)
+                //{
+                //    return;
+                //}
+                GraphicEffectType type = (GraphicEffectType)p.ReadUInt8();
+
+                uint source = p.ReadUInt32BE();
+                uint target = p.ReadUInt32BE();
+                ushort graphic = p.ReadUInt16BE();
+                ushort srcX = p.ReadUInt16BE();
+                ushort srcY = p.ReadUInt16BE();
+                sbyte srcZ = p.ReadInt8();
+                ushort targetX = p.ReadUInt16BE();
+                ushort targetY = p.ReadUInt16BE();
+                sbyte targetZ = p.ReadInt8();
+                byte speed = p.ReadUInt8();
+                ushort duration = p.ReadUInt8();
+                short fixedDirection = p.ReadInt16BE();
+                bool doesExplode = p.ReadBool();
+                ushort hue = 0;
+                GraphicEffectBlendMode blendmode = 0;
+                hue = (ushort)p.ReadUInt32BE();
+                blendmode = (GraphicEffectBlendMode)(p.ReadUInt32BE() % 7);
+                ushort effect = p.ReadUInt16BE();
+                ushort explodeEffect = p.ReadUInt16BE();
+                ushort explodeSound = p.ReadUInt16BE();
+                uint serial = p.ReadUInt32BE();
+                byte layer = p.ReadUInt8();
+                ushort unknown = p.ReadUInt16BE();
+                TimeSpan durationTimeSpan = TimeSpan.FromMilliseconds(p.ReadUInt32BE());
+                short spinning = p.ReadInt16BE();
+
+                /*if (speed > 7)
+                {
+                    speed = 7;
+                }*/
+
+                world.SpawnEffect
+                (
+                    type,
+                    source,
+                    target,
+                    graphic,
+                    hue,
+                    srcX,
+                    srcY,
+                    srcZ,
+                    targetX,
+                    targetY,
+                    targetZ,
+                    speed,
+                    duration,
+                    fixedDirection,
+                    doesExplode,
+                    false,
+                    blendmode, durationTimeSpan, spinning, null
+                );
+                break;
+            }
+            default: InvalidVersionReceived( ref p ); break;
+        }
+    }
+    
+    private static void EnhancedEffectMultiPoint(World world, ref StackDataReader p, int version)
+    {
+        switch (version)
+        {
+            case 0:
+            {
+                if (world.Player == null)
+                {
+                    return;
+                }
+                GraphicEffectType type = (GraphicEffectType)p.ReadUInt8();
+
+                uint source = p.ReadUInt32BE();
+                ushort graphic = p.ReadUInt16BE();
+                ushort srcX = p.ReadUInt16BE();
+                ushort srcY = p.ReadUInt16BE();
+                sbyte srcZ = p.ReadInt8();
+                byte speed = p.ReadUInt8();
+                ushort duration = p.ReadUInt8();
+                short fixedDirection = p.ReadInt16BE();
+                bool doesExplode = p.ReadBool();
+                ushort hue = 0;
+                GraphicEffectBlendMode blendmode = 0;
+                hue = (ushort)p.ReadUInt32BE();
+                blendmode = (GraphicEffectBlendMode)(p.ReadUInt32BE() % 7);
+                ushort effect = p.ReadUInt16BE();
+                ushort explodeEffect = p.ReadUInt16BE();
+                ushort explodeSound = p.ReadUInt16BE();
+                uint serial = p.ReadUInt32BE();
+                byte layer = p.ReadUInt8();
+                ushort unknown = p.ReadUInt16BE();
+                short spinning = p.ReadInt16BE();
+                ushort pointCount = p.ReadUInt16BE();
+
+                List<Tuple<TimeSpan, Vector3>> points = new List<Tuple<TimeSpan, Vector3>>();
+
+                for (int i = 0; i < pointCount; i++)
+                {
+                    TimeSpan durationTimeSpan = TimeSpan.FromMilliseconds(p.ReadUInt32BE());
                     ushort targetX = p.ReadUInt16BE();
                     ushort targetY = p.ReadUInt16BE();
                     sbyte targetZ = p.ReadInt8();
-                    byte speed = p.ReadUInt8();
-                    ushort duration = p.ReadUInt8();
-                    short fixedDirection = p.ReadInt16BE();
-                    bool doesExplode = p.ReadBool();
-                    ushort hue = 0;
-                    GraphicEffectBlendMode blendmode = 0;
-                    hue = (ushort)p.ReadUInt32BE();
-                    blendmode = (GraphicEffectBlendMode)(p.ReadUInt32BE() % 7);
-                    ushort effect = p.ReadUInt16BE();
-                    ushort explodeEffect = p.ReadUInt16BE();
-                    ushort explodeSound = p.ReadUInt16BE();
-                    uint serial = p.ReadUInt32BE();
-                    byte layer = p.ReadUInt8();
-                    ushort unknown = p.ReadUInt16BE();
-                    TimeSpan durationTimeSpan = TimeSpan.FromMilliseconds(p.ReadUInt32BE());
-                    short spinning = p.ReadInt16BE();
-
-                    /*if (speed > 7)
-                    {
-                        speed = 7;
-                    }*/
-
-                    World.SpawnEffect
-                    (
-                        type,
-                        source,
-                        target,
-                        graphic,
-                        hue,
-                        srcX,
-                        srcY,
-                        srcZ,
-                        targetX,
-                        targetY,
-                        targetZ,
-                        speed,
-                        duration,
-                        fixedDirection,
-                        doesExplode,
-                        false,
-                        blendmode, durationTimeSpan, spinning, null
-                    );
-                    break;
+                    points.Add(new Tuple<TimeSpan, Vector3>(durationTimeSpan, new Vector3(targetX, targetY, targetZ)));
                 }
-                default: InvalidVersionReceived( ref p ); break;
-            }
-        }
-        
-        private static void EnhancedEffectMultiPoint(ref StackDataReader p, int version)
-        {
-            switch (version)
-            {
-                case 0:
+                /*
+                 
+                
+                 if (speed > 7)
                 {
-                    if (World.Player == null)
-                    {
-                        return;
-                    }
-                    GraphicEffectType type = (GraphicEffectType)p.ReadUInt8();
+                    speed = 7;
+                }*/
 
-                    uint source = p.ReadUInt32BE();
-                    ushort graphic = p.ReadUInt16BE();
-                    ushort srcX = p.ReadUInt16BE();
-                    ushort srcY = p.ReadUInt16BE();
-                    sbyte srcZ = p.ReadInt8();
-                    byte speed = p.ReadUInt8();
-                    ushort duration = p.ReadUInt8();
-                    short fixedDirection = p.ReadInt16BE();
-                    bool doesExplode = p.ReadBool();
-                    ushort hue = 0;
-                    GraphicEffectBlendMode blendmode = 0;
-                    hue = (ushort)p.ReadUInt32BE();
-                    blendmode = (GraphicEffectBlendMode)(p.ReadUInt32BE() % 7);
-                    ushort effect = p.ReadUInt16BE();
-                    ushort explodeEffect = p.ReadUInt16BE();
-                    ushort explodeSound = p.ReadUInt16BE();
-                    uint serial = p.ReadUInt32BE();
-                    byte layer = p.ReadUInt8();
-                    ushort unknown = p.ReadUInt16BE();
-                    short spinning = p.ReadInt16BE();
-                    ushort pointCount = p.ReadUInt16BE();
-
-                    List<Tuple<TimeSpan, Vector3>> points = new List<Tuple<TimeSpan, Vector3>>();
-
-                    for (int i = 0; i < pointCount; i++)
-                    {
-                        TimeSpan durationTimeSpan = TimeSpan.FromMilliseconds(p.ReadUInt32BE());
-                        ushort targetX = p.ReadUInt16BE();
-                        ushort targetY = p.ReadUInt16BE();
-                        sbyte targetZ = p.ReadInt8();
-                        points.Add(new Tuple<TimeSpan, Vector3>(durationTimeSpan, new Vector3(targetX, targetY, targetZ)));
-                    }
-                    /*
-                     
-                    
-                     if (speed > 7)
-                    {
-                        speed = 7;
-                    }*/
-
-                    World.SpawnEffect
-                    (
-                        type,
-                        source,
-                        0,
-                        graphic,
-                        hue,
-                        srcX,
-                        srcY,
-                        srcZ,
-                        0,
-                        0,
-                        0,
-                        speed,
-                        duration,
-                        fixedDirection,
-                        doesExplode,
-                        false,
-                        blendmode, TimeSpan.Zero, spinning, points
-                    );
-                    break;
-                }
-                default: InvalidVersionReceived( ref p ); break;
+                world.SpawnEffect
+                (
+                    type,
+                    source,
+                    0,
+                    graphic,
+                    hue,
+                    srcX,
+                    srcY,
+                    srcZ,
+                    0,
+                    0,
+                    0,
+                    speed,
+                    duration,
+                    fixedDirection,
+                    doesExplode,
+                    false,
+                    blendmode, TimeSpan.Zero, spinning, points
+                );
+                break;
             }
+            default: InvalidVersionReceived( ref p ); break;
         }
+    }
 
-    private static void SetProfileOption(ref StackDataReader p, int version)
+    private static void SetProfileOption(World world, ref StackDataReader p, int version)
     {
         switch (version)
         {
@@ -225,7 +407,7 @@ internal class EnhancedPacketHandler
                         try
                         {
                             prop.SetValue(ProfileManager.CurrentProfile, val);
-                            ProfileManager.CurrentProfile?.Save(ProfileManager.ProfilePath);
+                            ProfileManager.CurrentProfile?.Save(world, ProfileManager.ProfilePath);
                         }
                         catch { }
                         break;
@@ -237,7 +419,7 @@ internal class EnhancedPacketHandler
                         try
                         {
                             prop.SetValue(ProfileManager.CurrentProfile, val);
-                            ProfileManager.CurrentProfile?.Save(ProfileManager.ProfilePath);
+                            ProfileManager.CurrentProfile?.Save(world, ProfileManager.ProfilePath);
                         }
                         catch { }
                         break;
@@ -250,14 +432,14 @@ internal class EnhancedPacketHandler
     }
 
     
-    private static void RollingTextSimple(ref StackDataReader p, int version)
+    private static void RollingTextSimple(World world, ref StackDataReader p, int version)
     {
         switch (version)
         {
             case 0:
             {
                 uint serial = p.ReadUInt32BE();
-                Entity entity = World.Get(serial);
+                Entity entity = world.Get(serial);
                 uint source = p.ReadUInt32BE();
                 ushort hue = p.ReadUInt16BE();
 
@@ -331,7 +513,7 @@ internal class EnhancedPacketHandler
                 
                 if (display && entity != null && text.Length > 0)
                 {
-                    World.WorldTextManager.AddRollingText(entity, hue, 3, text);
+                    world.WorldTextManager.AddRollingText(entity, hue, 3, text);
                 }
                 break;
             }
@@ -339,14 +521,14 @@ internal class EnhancedPacketHandler
         }
     }
     
-    private static void RollingText(ref StackDataReader p, int version)
+    private static void RollingText(World world, ref StackDataReader p, int version)
     {
         switch (version)
         {
             case 0:
             {
                 uint serial = p.ReadUInt32BE();
-                Entity entity = World.Get(serial);
+                Entity entity = world.Get(serial);
                 uint source = p.ReadUInt32BE();
                 ushort hue = p.ReadUInt16BE();
                 byte font = p.ReadUInt8();
@@ -376,7 +558,7 @@ internal class EnhancedPacketHandler
                 
                 if (entity != null && text.Length > 0)
                 {
-                    World.WorldTextManager.AddRollingText(entity, hue, font, text);
+                    world.WorldTextManager.AddRollingText(entity, hue, font, text);
                 }
                 break;
             }
@@ -386,7 +568,7 @@ internal class EnhancedPacketHandler
 
 
     
-    private static void ExtraTargetInformationPacket(ref StackDataReader p, int version)
+    private static void ExtraTargetInformationPacket(World world, ref StackDataReader p, int version)
     {
         switch (version)
         {
@@ -404,7 +586,7 @@ internal class EnhancedPacketHandler
                         ushort posZ = p.ReadUInt16BE();
                         uint preview = p.ReadUInt32BE();
                         ushort hue = p.ReadUInt16BE();
-                        TargetManager.SetExtra
+                        world.TargetManager.SetExtra
                         (
                             cursorID, type, new Vector3(posX, posY, posZ), preview, hue
                         );
@@ -419,13 +601,13 @@ internal class EnhancedPacketHandler
                         short posZ = p.ReadInt16BE();
                         uint preview = p.ReadUInt32BE();
                         ushort hue = p.ReadUInt16BE();
-                        TargetManager.SetExtra
+                        world.TargetManager.SetExtra
                         (
                             cursorID, type, new Vector3(posX, posY, posZ), preview, hue
                         );
                         
-                        TargetManager.TargetingState = CursorTarget.MultiPlacement;
-                        TargetManager.MultiTargetInfo = new MultiTargetInfo
+                        world.TargetManager.TargetingState = CursorTarget.MultiPlacement;
+                        world.TargetManager.MultiTargetInfo = new MultiTargetInfo
                         (
                             (ushort)preview,
                             posX,
@@ -442,7 +624,7 @@ internal class EnhancedPacketHandler
                         uint preview = p.ReadUInt32BE();
                         ushort hue = p.ReadUInt16BE();
 
-                        TargetManager.SetExtra
+                        world.TargetManager.SetExtra
                         (
                             cursorID, type, range, preview,
                             hue
@@ -456,13 +638,13 @@ internal class EnhancedPacketHandler
         }
     }
     
-    private static void ExtraTargetInformationClearPacket(ref StackDataReader p, int version)
+    private static void ExtraTargetInformationClearPacket(World world, ref StackDataReader p, int version)
     {
         switch (version)
         {
             case 0:
             {
-                TargetManager.SetExtra(
+                world.TargetManager.SetExtra(
                     p.ReadUInt32BE(), 
                     p.ReadUInt16BE(), 
                     p.ReadUInt16BE(),
@@ -474,7 +656,7 @@ internal class EnhancedPacketHandler
         }
     }
     
-    private static void CooldownTimerPacket(ref StackDataReader p, int version)
+    private static void CooldownTimerPacket(World world, ref StackDataReader p, int version)
     {
         switch (version)
         {
@@ -497,7 +679,7 @@ internal class EnhancedPacketHandler
                 ushort textHue = p.ReadUInt16BE();
                 ushort countdownHue = p.ReadUInt16BE();
 
-                World.Player.CooldownTimers.Add(new CooldownTimer(
+                world.Player.CooldownTimers.Add(new CooldownTimer(
                                                     itemID,
                                                     itemHue,
                                                     timeInSeconds,
@@ -517,7 +699,7 @@ internal class EnhancedPacketHandler
         }
     }
     
-    private static void SpecialHealthBarPacket(ref StackDataReader p)
+    private static void SpecialHealthBarPacket(World world, ref StackDataReader p)
     {
         int version = p.ReadUInt16BE();
 
@@ -542,7 +724,7 @@ internal class EnhancedPacketHandler
                             ushort locID = p.ReadUInt16BE();
                             bool hideWhenFull = p.ReadBool();
 
-                            Entity source = World.Get(serial);
+                            Entity source = world.Get(serial);
 
                             if (source != null)
                             {
@@ -565,7 +747,7 @@ internal class EnhancedPacketHandler
                         case 2:
                         {
                             uint serial = p.ReadUInt32BE();
-                            Entity source = World.Get(serial);
+                            Entity source = world.Get(serial);
 
                             if (source != null)
                             {
@@ -582,7 +764,7 @@ internal class EnhancedPacketHandler
         }
     }
 
-    private static void PlayableAreaPacket(ref StackDataReader p, int version)
+    private static void PlayableAreaPacket(World world, ref StackDataReader p, int version)
     {
         switch (version)
         {
@@ -594,7 +776,7 @@ internal class EnhancedPacketHandler
                 {
                     case 0:
                     {
-                        World.PlayableArea = null;
+                        world.PlayableArea = null;
                         break;
                     }
                     case 1:
@@ -613,7 +795,7 @@ internal class EnhancedPacketHandler
                             areas.Add(new Rectangle(x, y, w, h));
                         }
 
-                        World.PlayableArea = new PlayableAreaInformation(blocking, hue, areas);
+                        world.PlayableArea = new PlayableAreaInformation(blocking, hue, areas);
 
                         break;
                     }
@@ -624,7 +806,7 @@ internal class EnhancedPacketHandler
         }
     }
 
-    private static void HighlightedAreasPacket(ref StackDataReader p, int version)
+    private static void HighlightedAreasPacket(World world, ref StackDataReader p, int version)
     {
         switch (version)
         {
@@ -683,9 +865,9 @@ internal class EnhancedPacketHandler
         }
     }
 
-    private static void ActiveAbilityUpdatePacket(ref StackDataReader p, int version)
+    private static void ActiveAbilityUpdatePacket(World world, ref StackDataReader p, int version)
     {
-        if (!World.Settings.GeneralFlags.EnableEnhancedAbilities)
+        if (!world.Settings.GeneralFlags.EnableEnhancedAbilities)
             return;
         switch (version)
         {
@@ -739,7 +921,7 @@ internal class EnhancedPacketHandler
 
                 if (gump == null)
                 {
-                    UIManager.Add(gump = new EnhancedAbilitiesGump());
+                    UIManager.Add(gump = new EnhancedAbilitiesGump(world));
                 }
 
                 gump.Updated();
@@ -749,9 +931,9 @@ internal class EnhancedPacketHandler
         }
     }
 
-    private static void ActiveAbilityCompletePacket(ref StackDataReader p, int version)
+    private static void ActiveAbilityCompletePacket(World world, ref StackDataReader p, int version)
     {
-        if (!World.Settings.GeneralFlags.EnableEnhancedAbilities)
+        if (!world.Settings.GeneralFlags.EnableEnhancedAbilities)
             return;
         switch (version)
         {
@@ -845,7 +1027,7 @@ internal class EnhancedPacketHandler
 
                 if (gump == null)
                 {
-                    UIManager.Add(gump = new EnhancedAbilitiesGump());
+                    UIManager.Add(gump = new EnhancedAbilitiesGump(world));
                 }
 
                 gump.Updated();
@@ -854,7 +1036,7 @@ internal class EnhancedPacketHandler
         }
     }
 
-    private static void EnhancedPotionMacrosPacket(ref StackDataReader p, int version)
+    private static void EnhancedPotionMacrosPacket(World world, ref StackDataReader p, int version)
     {
         switch (version)
         {
@@ -865,7 +1047,7 @@ internal class EnhancedPacketHandler
                 {
                     ushort id = p.ReadUInt16BE();
                     int cliloc = p.ReadInt32BE();
-                    World.Settings.Potions.Add(new PotionDefinition()
+                    world.Settings.Potions.Add(new PotionDefinition()
                     {
                         ID = id,
                         Name = StringHelper.CapitalizeAllWords(ClilocLoader.Instance.Translate(cliloc))
@@ -878,7 +1060,7 @@ internal class EnhancedPacketHandler
                     ushort id = p.ReadUInt16BE();
                     ushort len = p.ReadUInt16BE();
                     string name = p.ReadASCII(len);
-                    World.Settings.Potions.Add(new PotionDefinition()
+                    world.Settings.Potions.Add(new PotionDefinition()
                     {
                         ID = id,
                         Name = StringHelper.CapitalizeAllWords(name)
@@ -890,17 +1072,17 @@ internal class EnhancedPacketHandler
         }
     }
     
-    private static void DefaultMovementSpeedPacket(ref StackDataReader p, int version)
+    private static void DefaultMovementSpeedPacket(World world, ref StackDataReader p, int version)
     {
         switch (version)
         {
             case 0:
             {
-                World.Settings.MovementSettings.TurnDelay = p.ReadUInt16BE();
-                World.Settings.MovementSettings.MoveSpeedWalkingUnmounted = p.ReadUInt16BE();
-                World.Settings.MovementSettings.MoveSpeedRunningUnmounted = p.ReadUInt16BE();
-                World.Settings.MovementSettings.MoveSpeedWalkingMounted = p.ReadUInt16BE();
-                World.Settings.MovementSettings.MoveSpeedRunningMounted = p.ReadUInt16BE();
+                world.Settings.MovementSettings.TurnDelay = p.ReadUInt16BE();
+                world.Settings.MovementSettings.MoveSpeedWalkingUnmounted = p.ReadUInt16BE();
+                world.Settings.MovementSettings.MoveSpeedRunningUnmounted = p.ReadUInt16BE();
+                world.Settings.MovementSettings.MoveSpeedWalkingMounted = p.ReadUInt16BE();
+                world.Settings.MovementSettings.MoveSpeedRunningMounted = p.ReadUInt16BE();
                 break;
             }
             default: InvalidVersionReceived( ref p ); break;
@@ -908,9 +1090,9 @@ internal class EnhancedPacketHandler
     }
     
     
-    private static void GeneralSettings(ref StackDataReader p, int version)
+    private static void GeneralSettings(World world, ref StackDataReader p, int version)
     {
-        World.Settings.GeneralSettings = new GeneralSettings();
+        world.Settings.GeneralSettings = new GeneralSettings();
         
         switch (version)
         {
@@ -919,16 +1101,16 @@ internal class EnhancedPacketHandler
                 if (p.ReadBool())
                 {
                     int len = p.ReadUInt16BE();
-                    World.Settings.GeneralSettings.StoreOverride = p.ReadASCII(len);
+                    world.Settings.GeneralSettings.StoreOverride = p.ReadASCII(len);
                 }
-                TopBarGump.Create();
+                TopBarGump.Create(world);
                 break;
             }
             default: InvalidVersionReceived( ref p ); break;
         }
     }
 
-    private static void SettingsPacket(ref StackDataReader p, int version)
+    private static void SettingsPacket(World world, ref StackDataReader p, int version)
     {
         switch (version)
         {
@@ -967,7 +1149,7 @@ internal class EnhancedPacketHandler
                     {
                         var isOn = IsSettingOn(generalOptions, id);
                         Console.WriteLine($"{prop.Name} => {isOn}");
-                        prop.SetValue(World.Settings.GeneralFlags, isOn);
+                        prop.SetValue(world.Settings.GeneralFlags, isOn);
                     }
                 }
 
@@ -979,7 +1161,7 @@ internal class EnhancedPacketHandler
                     {
                         var isOn = IsSettingOn(macroOptions, id);
                         Console.WriteLine($"{prop.Name} => {isOn}");
-                        prop.SetValue(World.Settings.MacroFlags, isOn);
+                        prop.SetValue(world.Settings.MacroFlags, isOn);
                     }
                 }
 
@@ -991,12 +1173,12 @@ internal class EnhancedPacketHandler
                     {
                         var isOn = IsSettingOn(clientOptions, id);
                         Console.WriteLine($"{prop.Name} => {isOn}");
-                        prop.SetValue(World.Settings.ClientOptionFlags, isOn);
+                        prop.SetValue(world.Settings.ClientOptionFlags, isOn);
                     }
                 }
-                TopBarGump.Create();
+                TopBarGump.Create(world);
                 
-                MacroControl.GenerateNames();
+                MacroControl.GenerateNames(world);
                 break;
             }
             default: InvalidVersionReceived( ref p ); break;
@@ -1021,24 +1203,24 @@ internal class EnhancedPacketHandler
     }
 
     
-    public static void OpenUOEnhancedRx(ref StackDataReader p)
+    public static void OpenUOEnhancedRx(World world, ref StackDataReader p)
     {
         ushort id = p.ReadUInt16BE();
         ushort ver = p.ReadUInt16BE();
-        Handler.HandlePacket(id, ref p, ver);
+        Handler.HandlePacket(id, world, ref p, ver);
     }
     
-    public delegate void EnhancedOnPacketBufferReader(ref StackDataReader p, int version);
+    public delegate void EnhancedOnPacketBufferReader(World world, ref StackDataReader p, int version);
     public static EnhancedPacketHandler Handler { get; } = new EnhancedPacketHandler();
     
     public void Add(ushort id, EnhancedOnPacketBufferReader handler)
         => _handlers[id] = handler;
 
-    public void HandlePacket(ushort packetID, ref StackDataReader p, int version)
+    public void HandlePacket(ushort packetID, World world, ref StackDataReader p, int version)
     {
         if (_handlers.ContainsKey(packetID))
         {
-            _handlers[packetID].Invoke(ref p, version);
+            _handlers[packetID].Invoke(world, ref p, version);
         }
         else
         {

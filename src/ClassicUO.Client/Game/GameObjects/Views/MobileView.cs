@@ -182,7 +182,7 @@ namespace ClassicUO.Game.GameObjects
                 }
             }
 
-            if (TargetManager.AreaOfEffectHighlight(X, Y, HighlightType.Mobile, out ushort rehue))
+            if (World.TargetManager.AreaOfEffectHighlight(X, Y, HighlightType.Mobile, out ushort rehue))
             {
                 overridedHue = rehue;
                 hueVec.Y = 1;

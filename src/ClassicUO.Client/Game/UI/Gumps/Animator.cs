@@ -50,7 +50,7 @@ internal class AnimatorGump : Gump
     private GumpPicTiled m_TransAnimate;
     private Label m_LabelAnimate;
     
-    public AnimatorGump(ushort id) : base(0, 0)
+    public AnimatorGump(World world, ushort id) : base(world, 0, 0)
     {
         m_ID = id;
         CanMove = true;
@@ -134,7 +134,7 @@ internal class AnimatorGump : Gump
                 m_AnimationGroup = 0;
                 for (int j = i; j < 200; j++)
                 {
-                    var frames = AnimationsLoader.Instance.GetAnimationFrames
+                    var frames = Client.Game.UO.Animations.GetAnimationFrames
                     (
                         m_ID, (byte)j, 0, out ushort hue,
                         out bool useUOP
@@ -152,7 +152,7 @@ internal class AnimatorGump : Gump
                 m_AnimationGroup = 0;
                 for (int j = i; j > 0; j--)
                 {
-                    var frames = AnimationsLoader.Instance.GetAnimationFrames
+                    var frames = Client.Game.UO.Animations.GetAnimationFrames
                     (
                         m_ID, (byte)j, 0, out ushort hue,
                         out bool useUOP
@@ -178,7 +178,7 @@ internal class AnimatorGump : Gump
             0, 200
         );
         
-        var frames = AnimationsLoader.Instance.GetAnimationFrames
+        var frames = Client.Game.UO.Animations.GetAnimationFrames
         (
             m_ID, (byte)m_AnimationGroup, 0, out ushort hue,
             out bool useUOP
@@ -286,7 +286,7 @@ internal class AnimatorGump : Gump
         borderButton.MouseDown += (sender, args) =>
         {
             
-            var frames = AnimationsLoader.Instance.GetAnimationFrames
+            var frames = Client.Game.UO.Animations.GetAnimationFrames
             (
                 m_ID, (byte)m_AnimationGroup, 0, out ushort hue,
                 out bool useUOP
@@ -313,7 +313,7 @@ internal class AnimatorGump : Gump
     public void BuildAnimation()
     {
         
-        var frames = AnimationsLoader.Instance.GetAnimationFrames
+        var frames = Client.Game.UO.Animations.GetAnimationFrames
         (
             m_ID, (byte)m_AnimationGroup, 0, out ushort hue,
             out bool useUOP

@@ -31,7 +31,7 @@ namespace ClassicUO.Game.UI.Gumps
         
         
         
-        public EnhancedAbilitiesGump() : base(0, 0)
+        public EnhancedAbilitiesGump(World world) : base(world, 0, 0)
         {
             _expanding = false;
             CanMove = true;
@@ -57,7 +57,7 @@ namespace ClassicUO.Game.UI.Gumps
             base.OnMove(x, y);
         }
 
-        public EnhancedAbilitiesGump(int x, int y) : this()
+        public EnhancedAbilitiesGump(World world, int x, int y) : this(world)
         {
             X = x;
             Y = y;
@@ -240,7 +240,7 @@ namespace ClassicUO.Game.UI.Gumps
             {
                 _LastMove = DateTime.MinValue;
                 var _currentProfile = ProfileManager.CurrentProfile;
-                _currentProfile?.Save(ProfileManager.ProfilePath);
+                _currentProfile?.Save(World, ProfileManager.ProfilePath);
             }
             
             //if ()

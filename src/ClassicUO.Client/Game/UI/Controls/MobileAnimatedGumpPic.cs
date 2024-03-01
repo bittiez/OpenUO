@@ -113,7 +113,7 @@ namespace ClassicUO.Game.UI.Controls
 
             CurrentAnimation = animations[0];
             
-            var frames = AnimationsLoader.Instance.GetAnimationFrames
+            var frames = Client.Game.UO.Animations.GetAnimationFrames
             (
                 CurrentAnimation.BodyValue, CurrentAnimation.AnimationGroup, CurrentAnimation.Direction, out ushort hue,
                 out IsUOP, false
@@ -139,7 +139,7 @@ namespace ClassicUO.Game.UI.Controls
             
             
             ushort hue = CurrentAnimation.Hue;
-            var frames = AnimationsLoader.Instance.GetAnimationFrames
+            var frames = Client.Game.UO.Animations.GetAnimationFrames
             (
                 CurrentAnimation.BodyValue, CurrentAnimation.AnimationGroup, CurrentAnimation.Direction, out hue,
                 out IsUOP, false
@@ -183,7 +183,7 @@ namespace ClassicUO.Game.UI.Controls
 
                         CurrentAnimation = Animations[AnimIndex];
 
-                        frames = AnimationsLoader.Instance.GetAnimationFrames
+                        frames = Client.Game.UO.Animations.GetAnimationFrames
                         (
                             CurrentAnimation.BodyValue, CurrentAnimation.AnimationGroup, CurrentAnimation.Direction, out hue,
                             out IsUOP, false

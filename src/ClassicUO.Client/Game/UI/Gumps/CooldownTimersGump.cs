@@ -19,14 +19,14 @@ namespace ClassicUO.Game.UI.Gumps
         private bool _expanding;
         private AlphaBlendControl _alphaBlendControl;
 
-        public CooldownTimersGump() : base(0, 0)
+        public CooldownTimersGump(World world) : base(world, 0, 0)
         {
             CanMove = true;
             CanCloseWithRightClick = true;
             AcceptMouseInput = true;
         }
 
-        public CooldownTimersGump(int x, int y) : this()
+        public CooldownTimersGump(World world, int x, int y) : this(world)
         {
             _expanding = false;
             X = x;

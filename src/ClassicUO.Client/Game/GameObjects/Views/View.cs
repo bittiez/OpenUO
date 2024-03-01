@@ -259,19 +259,22 @@ namespace ClassicUO.Game.GameObjects
             float depth
         )
         {
-            var texture = ArtLoader.Instance.GetStaticTexture(graphic, out var bounds);
+            ref readonly var artInfo = ref Client.Game.UO.Arts.GetArt(graphic);
 
-            if (texture != null)
+            if (artInfo.Texture != null)
             {
                 ref UOFileIndex index = ref ArtLoader.Instance.GetValidRefEntry(graphic + 0x4000);
-
+                var bounds = artInfo.UV;
+                
+                index.Width = (short)((artInfo.UV.Width >> 1) - 22);
+                index.Height = (short)(artInfo.UV.Height - 44);
                 var destinationRectangle = new Rectangle(x - index.Width, y - index.Height, bounds.Width, bounds.Height);
                 destinationRectangle.X += destinationRectangle.Width/2;
                 destinationRectangle.Y += destinationRectangle.Height / 2;
                 
                 batcher.Draw
                 (
-                    texture,
+                    artInfo.Texture,
                     destinationRectangle,
                     bounds,
                     hue,

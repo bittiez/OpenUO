@@ -224,7 +224,7 @@ namespace ClassicUO.Game.GameObjects
             if (Opened)
             {
                 UIManager.GetGump<ContainerGump>(Serial)?.Dispose();
-                UIManager.GetGump<SpellbookGump>(Serial)?.Dispose();
+                UIManager.GetGump<BaseSpellbookGump>(Serial)?.Dispose();
                 UIManager.GetGump<MapGump>(Serial)?.Dispose();
 
                 if (IsCorpse)

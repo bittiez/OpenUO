@@ -68,6 +68,7 @@ namespace ClassicUO.Game
             MessageManager = new MessageManager(this);
             ContainerManager = new ContainerManager(this);
             IgnoreManager = new IgnoreManager(this);
+            FriendManager = new FriendManager(this);
             SkillsGroupManager = new SkillsGroupManager(this);
             ChatManager = new ChatManager(this);
             AuraManager = new AuraManager(this);
@@ -94,29 +95,27 @@ namespace ClassicUO.Game
 
         public uint LastObject, ObjectToRemove;
 
-        public ObjectPropertiesListManager OPL { get; } = new ObjectPropertiesListManager();
-
         public CorpseManager CorpseManager { get; }
 
         public PartyManager Party { get; }
 
         public HouseManager HouseManager { get; }
-        public static PlayerMobile Player { get; private set; }
         
-        public static PlayableAreaInformation PlayableArea { get; set; }
+        public PlayableAreaInformation PlayableArea { get; set; }
 
         public MessageManager MessageManager { get; }
 
         public ContainerManager ContainerManager { get; }
 
         public IgnoreManager IgnoreManager { get; }
+        public FriendManager FriendManager { get; }
 
         public SkillsGroupManager SkillsGroupManager { get; }
 
         public ChatManager ChatManager { get; }
-        public static OpenUOSettings Settings = new OpenUOSettings();
+        public OpenUOSettings Settings = new OpenUOSettings();
 
-        public static ObjectPropertiesListManager OPL { get; } = new ObjectPropertiesListManager();
+        public ObjectPropertiesListManager OPL { get; } = new ObjectPropertiesListManager();
 
         public AuraManager AuraManager { get; }
 
@@ -127,8 +126,6 @@ namespace ClassicUO.Game
         public DelayedObjectClickManager DelayedObjectClickManager { get; }
 
         public BoatMovingManager BoatMovingManager { get; }
-      
-        public static Dictionary<uint, Mobile> Mobiles { get; } = new Dictionary<uint, Mobile>();
         
         public static Dictionary<uint,SpecialHealthBarData> HealthBarEntities { get; } = new Dictionary<uint,SpecialHealthBarData>();
 
@@ -660,7 +657,7 @@ namespace ClassicUO.Game
             );
         }
         
-        public static void SpawnEffect
+        public void SpawnEffect
         (
             GraphicEffectType type,
             uint source,
@@ -709,14 +706,14 @@ namespace ClassicUO.Game
             );
         }
         
-        public static uint SallosFindNearest()
+        public uint SallosFindNearest()
         {
             int distance = int.MaxValue;
             uint serial = 0;
 
             bool any = false;
 
-            if (World.Player.NotorietyFlag == NotorietyFlag.Murderer)
+            if (Player.NotorietyFlag == NotorietyFlag.Murderer)
             {
                 any = true;
             }
@@ -800,7 +797,7 @@ namespace ClassicUO.Game
             return serial;
         }
 
-        public static uint FindNearestCursor(ScanTypeObject scanType)
+        public uint FindNearestCursor(ScanTypeObject scanType)
         {
             double distance = double.MaxValue;
             uint serial = 0;

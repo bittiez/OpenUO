@@ -48,7 +48,7 @@ namespace ClassicUO.Game.UI.Gumps
     {
         const ushort LOCK_GRAPHIC = 0x1086;
 
-        private GumpPic _background;
+        private Control _background;
         private SpellDefinition _spell;
 
         private readonly MacroManager _mm;
@@ -77,23 +77,73 @@ namespace ClassicUO.Game.UI.Gumps
 
         public ushort Hue
         {
-            set => _background.Hue = value;
+            set
+            {
+                if (_background is GumpPic gumpPic)
+                    gumpPic.Hue = value;
+                else if (_background is AlphaBlendControl alpha)
+                    alpha.Hue = value;
+            }
+        }
+
+        public void Rebuild()
+        {
+            Clear();
+            _background.Dispose();
+            BuildGump();
         }
 
         private void BuildGump()
         {
-            Add(
-                _background = new GumpPic(0, 0, (ushort)_spell.GumpIconSmallID, 0)
-                {
-                    AcceptMouseInput = false
-                }
-            );
-
-            int cliloc = GetSpellTooltip(_spell.ID);
-
-            if (cliloc != 0)
+            if (_spell.ID >= 0 && _spell.ID <= 100)
+                _spell = SpellsMagery.GetSpell(_spell.ID);
+            if (_spell.GumpIconSmallID == 0)
             {
-                SetTooltip(ClilocLoader.Instance.GetString(cliloc), 80);
+                Add(_background = new AlphaBlendControl()
+                {
+                    X = 0,
+                    Y = 0,
+                    Width = 44,
+                    Height = 44
+                });
+            }
+            else
+            {
+                Add
+                (
+                    _background = new GumpPic(0, 0, (ushort)_spell.GumpIconSmallID, 0)
+                    {
+                        AcceptMouseInput = false
+                    }
+                );
+            }
+
+            if (_spell.ID >= 1 && _spell.ID <= 100) // Magery
+            {
+                if (SpellsMagery.GetAllSpells.TryGetValue(_spell.ID, out var spell))
+                {
+                    if (!string.IsNullOrEmpty(spell.Name))
+                    {
+                        SetTooltip(spell.Name);
+                    }
+                    else
+                    {
+                        SetTooltip($"Cast {spell.ID}");
+                    }
+                }
+                else
+                {
+                    SetTooltip($"Cast {spell.ID}");
+                }
+            }
+            else
+            {
+                int cliloc = GetSpellTooltip(_spell.ID);
+
+                if (cliloc != 0)
+                {
+                    SetTooltip(ClilocLoader.Instance.GetString(cliloc), 80);
+                }
             }
 
             WantUpdateSize = true;
@@ -150,11 +200,6 @@ namespace ClassicUO.Game.UI.Gumps
 
         private static int GetSpellTooltip(int id)
         {
-            if (id >= 1 && id <= 64) // Magery
-            {
-                return 3002011 + (id - 1);
-            }
-
             if (id >= 101 && id <= 117) // necro
             {
                 return 1060509 + (id - 101);
@@ -209,7 +254,7 @@ namespace ClassicUO.Game.UI.Gumps
 
             if (button == MouseButtonType.Left && ShowEdit)
             {
-                Macro mCast = Macro.CreateFastMacro(_spell.Name, MacroType.CastSpell, (MacroSubType)GetSpellsId() + SpellBookDefinition.GetSpellsGroup(_spell.ID), (MacroSubType)0);
+                Macro mCast = Macro.CreateFastMacro(World, _spell.Name, MacroType.CastSpell, (MacroSubType)GetSpellsId() + SpellBookDefinition.GetSpellsGroup(_spell.ID), (MacroSubType)0);
                 if (_mm.FindMacro(_spell.Name) == null)
                 {
                     _mm.MoveToBack(mCast);

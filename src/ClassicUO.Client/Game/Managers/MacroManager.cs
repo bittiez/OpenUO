@@ -84,7 +84,7 @@ namespace ClassicUO.Game.Managers
 
         public bool WaitingBandageTarget { get; set; }
 
-
+        
         public void Load()
         {
             string path = Path.Combine(ProfileManager.ProfilePath, "macros.xml");
@@ -122,7 +122,7 @@ namespace ClassicUO.Game.Managers
             {
                 foreach (XmlElement xml in root.GetElementsByTagName("macro"))
                 {
-                    Macro macro = new Macro(xml.GetAttribute("name"));
+                    Macro macro = new Macro(_world, xml.GetAttribute("name"));
                     macro.Load(xml);
                     PushToBack(macro);
                 }
@@ -161,6 +161,7 @@ namespace ClassicUO.Game.Managers
             (
                 new Macro
                 (
+                    _world,
                     ResGeneral.Paperdoll,
                     (SDL.SDL_Keycode) 112,
                     true,
@@ -168,7 +169,7 @@ namespace ClassicUO.Game.Managers
                     false
                 )
                 {
-                    Items = new MacroObject((MacroType) 8, (MacroSubType) 10, (MacroSubType)0)
+                    Items = new MacroObject( _world,(MacroType) 8, (MacroSubType) 10, (MacroSubType)0)
                     {
                         SubMenuType = 1
                     }
@@ -179,6 +180,7 @@ namespace ClassicUO.Game.Managers
             (
                 new Macro
                 (
+                    _world,
                     ResGeneral.Options,
                     (SDL.SDL_Keycode) 111,
                     true,
@@ -186,7 +188,7 @@ namespace ClassicUO.Game.Managers
                     false
                 )
                 {
-                    Items = new MacroObject((MacroType) 8, (MacroSubType) 9, (MacroSubType)0)
+                    Items = new MacroObject(_world,(MacroType) 8, (MacroSubType) 9, (MacroSubType)0)
                     {
                         SubMenuType = 1
                     }
@@ -197,6 +199,7 @@ namespace ClassicUO.Game.Managers
             (
                 new Macro
                 (
+                    _world,
                     ResGeneral.Journal,
                     (SDL.SDL_Keycode) 106,
                     true,
@@ -204,7 +207,7 @@ namespace ClassicUO.Game.Managers
                     false
                 )
                 {
-                    Items = new MacroObject((MacroType) 8, (MacroSubType) 12, (MacroSubType)0)
+                    Items = new MacroObject(_world,(MacroType) 8, (MacroSubType) 12, (MacroSubType)0)
                     {
                         SubMenuType = 1
                     }
@@ -215,6 +218,7 @@ namespace ClassicUO.Game.Managers
             (
                 new Macro
                 (
+                    _world,
                     ResGeneral.Backpack,
                     (SDL.SDL_Keycode) 105,
                     true,
@@ -222,7 +226,7 @@ namespace ClassicUO.Game.Managers
                     false
                 )
                 {
-                    Items = new MacroObject((MacroType) 8, (MacroSubType) 16, (MacroSubType)0)
+                    Items = new MacroObject(_world,(MacroType) 8, (MacroSubType) 16, (MacroSubType)0)
                     {
                         SubMenuType = 1
                     }
@@ -233,6 +237,7 @@ namespace ClassicUO.Game.Managers
             (
                 new Macro
                 (
+                    _world,
                     ResGeneral.Radar,
                     (SDL.SDL_Keycode) 114,
                     true,
@@ -240,7 +245,7 @@ namespace ClassicUO.Game.Managers
                     false
                 )
                 {
-                    Items = new MacroObject((MacroType) 8, (MacroSubType) 17, (MacroSubType)0)
+                    Items = new MacroObject(_world,(MacroType) 8, (MacroSubType) 17, (MacroSubType)0)
                     {
                         SubMenuType = 1
                     }
@@ -251,6 +256,7 @@ namespace ClassicUO.Game.Managers
             (
                 new Macro
                 (
+                    _world,
                     ResGeneral.Bow,
                     (SDL.SDL_Keycode) 98,
                     false,
@@ -258,7 +264,7 @@ namespace ClassicUO.Game.Managers
                     false
                 )
                 {
-                    Items = new MacroObject((MacroType) 18, 0, (MacroSubType)0)
+                    Items = new MacroObject(_world,(MacroType) 18, 0, (MacroSubType)0)
                     {
                         SubMenuType = 0
                     }
@@ -269,6 +275,7 @@ namespace ClassicUO.Game.Managers
             (
                 new Macro
                 (
+                    _world,
                     ResGeneral.Salute,
                     (SDL.SDL_Keycode) 115,
                     false,
@@ -276,7 +283,7 @@ namespace ClassicUO.Game.Managers
                     false
                 )
                 {
-                    Items = new MacroObject((MacroType) 19, 0, (MacroSubType)0)
+                    Items = new MacroObject(_world,(MacroType) 19, 0, (MacroSubType)0)
                     {
                         SubMenuType = 0
                     }
@@ -825,8 +832,33 @@ namespace ClassicUO.Game.Managers
                                 case MacroSubType.NinjitsuSpellbook:
                                 case MacroSubType.SpellWeavingSpellbook:
                                 case MacroSubType.MysticismSpellbook:
+                                {
+                                    BaseSpellbookGump spellbook = null;
 
-                                    SpellbookGump spellbook = UIManager.GetGump<SpellbookGump>();
+                                    switch (macro.SubCode)
+                                    {
+                                        case MacroSubType.MageSpellbook:
+                                            spellbook = UIManager.GetGump<MagerySpellbookGump>();
+                                            break;
+                                        case MacroSubType.NecroSpellbook:
+                                            spellbook = UIManager.GetGump<NecromancySpellbookGump>();
+                                            break;
+                                        case MacroSubType.PaladinSpellbook:
+                                            spellbook = UIManager.GetGump<ChivalrySpellbookGump>();
+                                            break;
+                                        case MacroSubType.BushidoSpellbook:
+                                            spellbook = UIManager.GetGump<BushidoSpellbookGump>();
+                                            break;
+                                        case MacroSubType.NinjitsuSpellbook:
+                                            spellbook = UIManager.GetGump<NinjitsuSpellbookGump>();
+                                            break;
+                                        case MacroSubType.SpellWeavingSpellbook:
+                                            spellbook = UIManager.GetGump<SpellweavingSpellbookGump>();
+                                            break;
+                                        case MacroSubType.MysticismSpellbook:
+                                            spellbook = UIManager.GetGump<MysticismSpellbookGump>();
+                                            break;
+                                    }
 
                                     if (spellbook != null)
                                     {
@@ -845,6 +877,7 @@ namespace ClassicUO.Game.Managers
                                     }
 
                                     break;
+                                }
 
                                 case MacroSubType.Overview:
 
@@ -944,14 +977,14 @@ namespace ClassicUO.Game.Managers
                     break;
 
                 case MacroType.CastSpell:
-                    int spell = macro.SubCode - MacroSubType.Clumsy + 1;
+                    int spellId = (int)macro.SubCode;
 
-                    if (spell > 0 && spell <= 151)
+                    //if ()
                     {
                         int totalCount = 0;
                         int spellType;
 
-                        for (spellType = 0; spellType < 7; spellType++)
+                        /*for (spellType = 0; spellType < 7; spellType++)
                         {
                             totalCount += _spellsCountTable[spellType];
 
@@ -975,21 +1008,21 @@ namespace ClassicUO.Game.Managers
                                 {
                                     spell -= 23;
                                 }
-                            }
-                            if (!World.Settings.MacroFlags.EnhancedSpellMacros || macro.SubSubCode <= MacroSubType.TargetNone)
-                                GameActions.CastSpell(spell);
-                            else if (macro.SubSubCode == MacroSubType.TargetLast)
-                            {
-                                if (ProfileManager.CurrentProfile != null && ProfileManager.CurrentProfile.SplitLastTarget)
-                                    GameActions.CastSpellWithTarget(spell, (uint)TargetManager.LastTargetInfo.Serial, (uint)TargetManager.LastBeneficialTargetInfo.Serial);
-                                else
-                                    GameActions.CastSpellWithTarget(spell, (uint)TargetManager.LastTargetInfo.Serial);
-                            }
-                            else if (macro.SubSubCode == MacroSubType.TargetSelf)
-                                GameActions.CastSpellWithTarget(spell, World.Player.Serial);
+                            }*/
+                        if (!_world.Settings.MacroFlags.EnhancedSpellMacros || (int)macro.SubSubCode < 1)
+                            GameActions.CastSpell(spellId);
+                        else if ((int)macro.SubSubCode == 1)
+                        {
+                            if (ProfileManager.CurrentProfile != null && ProfileManager.CurrentProfile.SplitLastTarget)
+                                GameActions.CastSpellWithTarget(spellId, (uint)_world.TargetManager.LastTargetInfo.Serial, (uint)_world.TargetManager.LastBeneficialTargetInfo.Serial);
                             else
-                                GameActions.CastSpell(spell);
+                                GameActions.CastSpellWithTarget(spellId, (uint)_world.TargetManager.LastTargetInfo.Serial);
                         }
+                        else if ((int)macro.SubSubCode == 2)
+                            GameActions.CastSpellWithTarget(spellId, _world.Player.Serial);
+                        else
+                            GameActions.CastSpell(spellId);
+                        
                     }
 
                     break;
@@ -1065,11 +1098,11 @@ namespace ClassicUO.Game.Managers
                         {
                             _world.TargetManager.TargetLast();
                         }
-                        else if (World.Settings.ClientOptionFlags.AllowSplitTargetsOptions && 
+                        else if (_world.Settings.ClientOptionFlags.AllowSplitTargetsOptions && 
                                  ProfileManager.CurrentProfile != null && ProfileManager.CurrentProfile.SplitLastTarget &&
                                  _world.TargetManager.TargetingType == TargetType.Beneficial && _world.TargetManager.LastBeneficialTargetInfo.IsEntity)
                         {
-                            _world.TargetManager.Target(TargetManager.LastBeneficialTargetInfo.Serial);
+                            _world.TargetManager.Target(_world.TargetManager.LastBeneficialTargetInfo.Serial);
                         }
                         else if (_world.TargetManager.LastTargetInfo.IsEntity)
                         {
@@ -1456,7 +1489,7 @@ namespace ClassicUO.Game.Managers
                     }
                     else if (scanRange == ScanModeObject.NearestCursor)
                     {
-                        SetLastTarget(World.FindNearestCursor(scantype));
+                        SetLastTarget(_world.FindNearestCursor(scantype));
                     }
                     else
                     {
@@ -1574,9 +1607,9 @@ namespace ClassicUO.Game.Managers
                         {
                             case 0:
                                 {
-                                    World.Player.AddMessage(MessageType.Label, "-find-", TextType.CLIENT);
+                                    _world.Player.AddMessage(MessageType.Label, "-find-", TextType.CLIENT);
 
-                                    SetLastTarget(World.SallosFindNearest());
+                                    SetLastTarget(_world.SallosFindNearest());
 
                                     break;
                                 }
@@ -1584,14 +1617,14 @@ namespace ClassicUO.Game.Managers
 
                             case 1:
                                 {
-                                    World.Player.AddMessage(MessageType.Label, "-set-", TextType.CLIENT);
+                                    _world.Player.AddMessage(MessageType.Label, "-set-", TextType.CLIENT);
                                     
                                     var noto = TargetType.Harmful;
 
-                                    if (TargetManager.IsTargeting && TargetManager.TargetingType == TargetType.Beneficial)
+                                    if (_world.TargetManager.IsTargeting && _world.TargetManager.TargetingType == TargetType.Beneficial)
                                         noto = TargetType.Beneficial;
                                     
-                                    TargetManager.StoreTarget();
+                                    _world.TargetManager.StoreTarget();
                                     
                                     //if (TargetManager.IsTargeting)
                                     //{
@@ -1599,16 +1632,16 @@ namespace ClassicUO.Game.Managers
                                     //}
 
 
-                                    TargetManager.SetTargeting(CursorTarget.Dummy, CursorType.Target, noto);
+                                    _world.TargetManager.SetTargeting(CursorTarget.Dummy, CursorType.Target, noto);
                                     break;
                                 }
 
                             case 2:
                                 {
-                                    World.Player.AddMessage(MessageType.Label, "-acquire-", TextType.CLIENT);
+                                    _world.Player.AddMessage(MessageType.Label, "-acquire-", TextType.CLIENT);
 
-                                    SetLastTarget(World.SallosFindNearest());
-                                    if (TargetManager.IsTargeting)
+                                    SetLastTarget(_world.SallosFindNearest());
+                                    if (_world.TargetManager.IsTargeting)
                                     {
                                         //if (TargetManager.TargetingState != TargetType.Object)
                                         //{
@@ -1616,22 +1649,22 @@ namespace ClassicUO.Game.Managers
                                         //}
                                         //else 
 
-                                        if (TargetManager.TargetingState != CursorTarget.Object)
+                                        if (_world.TargetManager.TargetingState != CursorTarget.Object)
                                         {
-                                            TargetManager.TargetLast();
+                                            _world.TargetManager.TargetLast();
                                         }
                                         else if (ProfileManager.CurrentProfile != null && ProfileManager.CurrentProfile.SplitLastTarget &&
-                                                 TargetManager.TargetingType == TargetType.Beneficial && TargetManager.LastBeneficialTargetInfo.IsEntity)
+                                                 _world.TargetManager.TargetingType == TargetType.Beneficial && _world.TargetManager.LastBeneficialTargetInfo.IsEntity)
                                         {
-                                            TargetManager.Target(TargetManager.LastBeneficialTargetInfo.Serial);
+                                            _world.TargetManager.Target(_world.TargetManager.LastBeneficialTargetInfo.Serial);
                                         }
-                                        else if (TargetManager.LastTargetInfo.IsEntity)
+                                        else if (_world.TargetManager.LastTargetInfo.IsEntity)
                                         {
-                                            TargetManager.Target(TargetManager.LastTargetInfo.Serial);
+                                            _world.TargetManager.Target(_world.TargetManager.LastTargetInfo.Serial);
                                         }
                                         else
                                         {
-                                            TargetManager.Target(TargetManager.LastTargetInfo.Graphic, TargetManager.LastTargetInfo.X, TargetManager.LastTargetInfo.Y, TargetManager.LastTargetInfo.Z);
+                                            _world.TargetManager.Target(_world.TargetManager.LastTargetInfo.Graphic, _world.TargetManager.LastTargetInfo.X, _world.TargetManager.LastTargetInfo.Y, _world.TargetManager.LastTargetInfo.Z);
                                         }
 
                                         WaitForTargetTimer = 0;
@@ -1678,7 +1711,7 @@ namespace ClassicUO.Game.Managers
 
                 case MacroType.AddFriend:
                 {
-                    TargetManager.SetTargeting(CursorTarget.FriendTarget, CursorType.Target, TargetType.Neutral);
+                    _world.TargetManager.SetTargeting(CursorTarget.FriendTarget, CursorType.Target, TargetType.Neutral);
                     break;
                 }
                 
@@ -1982,7 +2015,7 @@ namespace ClassicUO.Game.Managers
 
     internal class Macro : LinkedObject, IEquatable<Macro>
     {
-        public Macro(string name, SDL.SDL_Keycode key, bool alt, bool ctrl, bool shift) : this(name)
+        public Macro(World world, string name, SDL.SDL_Keycode key, bool alt, bool ctrl, bool shift) : this(world, name)
         {
             Key = key;
             Alt = alt;
@@ -1990,7 +2023,7 @@ namespace ClassicUO.Game.Managers
             Shift = shift;
         }
 
-        public Macro(string name, MouseButtonType button, bool alt, bool ctrl, bool shift) : this(name)
+        public Macro(World world, string name, MouseButtonType button, bool alt, bool ctrl, bool shift) : this(world, name)
         {
             MouseButton = button;
             Alt = alt;
@@ -1998,7 +2031,7 @@ namespace ClassicUO.Game.Managers
             Shift = shift;
         }
 
-        public Macro(string name, bool wheelUp, bool alt, bool ctrl, bool shift) : this(name)
+        public Macro(World world, string name, bool wheelUp, bool alt, bool ctrl, bool shift) : this(world, name)
         {
             WheelScroll = true;
             WheelUp = wheelUp;
@@ -2007,12 +2040,14 @@ namespace ClassicUO.Game.Managers
             Shift = shift;
         }
 
-        public Macro(string name)
+        public Macro(World world, string name)
         {
+            _world = world;
             Name = name;
         }
 
         public string Name { get; }
+        private World _world;
 
         public SDL.SDL_Keycode Key { get; set; }
         public MouseButtonType MouseButton { get; set; }
@@ -2169,11 +2204,11 @@ namespace ClassicUO.Game.Managers
 
                     if (xmlAction.HasAttribute("text"))
                     {
-                        m = new MacroObjectString(code, sub, subsub, xmlAction.GetAttribute("text"));
+                        m = new MacroObjectString(_world, code, sub, subsub, xmlAction.GetAttribute("text"));
                     }
                     else
                     {
-                        m = new MacroObject(code, sub, subsub);
+                        m = new MacroObject(_world, code, sub, subsub);
                     }
 
                     m.SubMenuType = subMenuType;
@@ -2184,7 +2219,7 @@ namespace ClassicUO.Game.Managers
         }
 
 
-        public static MacroObject Create(MacroType code)
+        public static MacroObject Create(World world, MacroType code)
         {
             MacroObject obj;
 
@@ -2198,12 +2233,12 @@ namespace ClassicUO.Game.Managers
                 case MacroType.SetUpdateRange:
                 case MacroType.ModifyUpdateRange:
                 case MacroType.RazorMacro:
-                    obj = new MacroObjectString(code, MacroSubType.MSC_NONE, (MacroSubType)0);
+                    obj = new MacroObjectString(world, code, MacroSubType.MSC_NONE, (MacroSubType)0);
 
                     break;
 
                 default:
-                    obj = new MacroObject(code, MacroSubType.MSC_NONE, (MacroSubType)0);
+                    obj = new MacroObject(world, code, MacroSubType.MSC_NONE, (MacroSubType)0);
 
                     break;
             }
@@ -2211,10 +2246,11 @@ namespace ClassicUO.Game.Managers
             return obj;
         }
 
-        public static Macro CreateEmptyMacro(string name)
+        public static Macro CreateEmptyMacro(World world, string name)
         {
             Macro macro = new Macro
             (
+                world,
                 name,
                 (SDL.SDL_Keycode) 0,
                 false,
@@ -2222,17 +2258,18 @@ namespace ClassicUO.Game.Managers
                 false
             );
 
-            MacroObject item = new MacroObject(MacroType.None, MacroSubType.MSC_NONE, (MacroSubType)0);
+            MacroObject item = new MacroObject(world, MacroType.None, MacroSubType.MSC_NONE, (MacroSubType)0);
 
             macro.PushToBack(item);
 
             return macro;
         }
 
-        public static Macro CreateFastMacro(string name, MacroType type, MacroSubType sub, MacroSubType subsub)
+        public static Macro CreateFastMacro(World world, string name, MacroType type, MacroSubType sub, MacroSubType subsub)
         {
             Macro macro = new Macro
               (
+                  world,
                   name,
                   (SDL.SDL_Keycode) 0,
                   false,
@@ -2240,7 +2277,7 @@ namespace ClassicUO.Game.Managers
                   false
               );
 
-            MacroObject item = new MacroObject(type, sub, subsub);
+            MacroObject item = new MacroObject(world, type, sub, subsub);
 
             macro.PushToBack(item);
 
@@ -2280,15 +2317,17 @@ namespace ClassicUO.Game.Managers
 
                 case MacroType.InvokeVirtue:
                     offset = (int) MacroSubType.Honor;
-                    count = MacroSubType.Clumsy - MacroSubType.Honor;
+                    count = MacroSubType.Valor + 1 - MacroSubType.Honor;
 
                     break;
 
-                case MacroType.CastSpell:
-                    offset = (int) MacroSubType.Clumsy;
-                    count = MacroSubType.Hostile - MacroSubType.Clumsy;
-
-                    break;
+                //case MacroType.CastSpell:
+                //    offset = 0; //(int) MacroSubType.Clumsy;
+                //    count = SpellsMagery.GetAllSpells.Count + SpellsBushido.GetAllSpells.Count + SpellsChivalry.GetAllSpells.Count + SpellsMastery.GetAllSpells.Count +
+                //            SpellsMysticism.GetAllSpells.Count + SpellsNecromancy.GetAllSpells.Count + SpellsNinjitsu.GetAllSpells.Count + SpellsSpellweaving.GetAllSpells.Count;   
+                //    //MacroSubType.Hostile - MacroSubType.Clumsy;
+                //
+                //    break;
 
                 case MacroType.SelectNext:
                 case MacroType.SelectPrevious:
@@ -2324,7 +2363,7 @@ namespace ClassicUO.Game.Managers
                     break;
             }
         }
-        public static void GetSecondaryBoundByCode(MacroType code, ref int count, ref int offset)
+        /*public static void GetSecondaryBoundByCode(MacroType code, ref int count, ref int offset)
         {
             switch (code)
             {
@@ -2335,14 +2374,16 @@ namespace ClassicUO.Game.Managers
                     break;
 
             }
-        }
+        }*/
     }
 
 
     internal class MacroObject : LinkedObject
     {
-        public MacroObject(MacroType code, MacroSubType sub, MacroSubType subsub)
+        private readonly World _world;
+        public MacroObject(World world, MacroType code, MacroSubType sub, MacroSubType subsub)
         {
+            _world = world;
             Code = code;
             SubCode = sub;
             SubSubCode = subsub;
@@ -2357,7 +2398,7 @@ namespace ClassicUO.Game.Managers
                 case MacroType.UseSkill:
                 case MacroType.ArmDisarm:
                 case MacroType.InvokeVirtue:
-                case MacroType.CastSpell when !World.Settings.MacroFlags.EnhancedSpellMacros:
+                //case MacroType.CastSpell when !world.Settings.MacroFlags.EnhancedSpellMacros:
                 case MacroType.SelectNext:
                 case MacroType.SelectPrevious:
                 case MacroType.SelectNearest:
@@ -2390,16 +2431,12 @@ namespace ClassicUO.Game.Managers
                     SubMenuType = 2;
 
                     break;
-                
-                case MacroType.CastSpell when World.Settings.MacroFlags.EnhancedSpellMacros:
-                    SubMenuType = 3;
-
-                    break;
 
 
                 case MacroType.SallosTargeting:
                 case MacroType.UsePotionEnhanced:
                 case MacroType.EnhancedAbilitiesBySlot:
+                case MacroType.CastSpell:
                     SubMenuType = 4;
                     break;
 
@@ -2423,7 +2460,7 @@ namespace ClassicUO.Game.Managers
 
     internal class MacroObjectString : MacroObject
     {
-        public MacroObjectString(MacroType code, MacroSubType sub, MacroSubType subsub, string str = "") : base(code, sub, subsub)
+        public MacroObjectString(World world, MacroType code, MacroSubType sub, MacroSubType subsub, string str = "") : base(world, code, sub, subsub)
         {
             Text = str;
         }
@@ -2594,150 +2631,7 @@ namespace ClassicUO.Game.Managers
         Honor, //Invoke Virture group
         Sacrifice,
         Valor,
-        Clumsy, //Cast Spell group
-        CreateFood,
-        Feeblemind,
-        Heal,
-        MagicArrow,
-        NightSight,
-        ReactiveArmor,
-        Weaken,
-        Agility,
-        Cunning,
-        Cure,
-        Harm,
-        MagicTrap,
-        MagicUntrap,
-        Protection,
-        Strength,
-        Bless,
-        Fireball,
-        MagicLock,
-        Poison,
-        Telekinesis,
-        Teleport,
-        Unlock,
-        WallOfStone,
-        ArchCure,
-        ArchProtection,
-        Curse,
-        FireField,
-        GreaterHeal,
-        Lightning,
-        ManaDrain,
-        Recall,
-        BladeSpirits,
-        DispellField,
-        Incognito,
-        MagicReflection,
-        MindBlast,
-        Paralyze,
-        PoisonField,
-        SummonCreature,
-        Dispel,
-        EnergyBolt,
-        Explosion,
-        Invisibility,
-        Mark,
-        MassCurse,
-        ParalyzeField,
-        Reveal,
-        ChainLightning,
-        EnergyField,
-        FlameStrike,
-        GateTravel,
-        ManaVampire,
-        MassDispel,
-        MeteorSwarm,
-        Polymorph,
-        Earthquake,
-        EnergyVortex,
-        Resurrection,
-        AirElemental,
-        SummonDaemon,
-        EarthElemental,
-        FireElemental,
-        WaterElemental,
-        AnimateDead,
-        BloodOath,
-        CorpseSkin,
-        CurseWeapon,
-        EvilOmen,
-        HorrificBeast,
-        LichForm,
-        MindRot,
-        PainSpike,
-        PoisonStrike,
-        Strangle,
-        SummonFamilar,
-        VampiricEmbrace,
-        VengefulSpirit,
-        Wither,
-        WraithForm,
-        Exorcism,
-        CleanceByFire,
-        CloseWounds,
-        ConsecrateWeapon,
-        DispelEvil,
-        DivineFury,
-        EnemyOfOne,
-        HolyLight,
-        NobleSacrifice,
-        RemoveCurse,
-        SacredJourney,
-        HonorableExecution,
-        Confidence,
-        Evasion,
-        CounterAttack,
-        LightingStrike,
-        MomentumStrike,
-        FocusAttack,
-        DeathStrike,
-        AnimalForm,
-        KiAttack,
-        SurpriceAttack,
-        Backstab,
-        Shadowjump,
-        MirrorImage,
-        ArcaneCircle,
-        GiftOfRenewal,
-        ImmolatingWeapon,
-        Attunement,
-        Thunderstorm,
-        NaturesFury,
-        SummonFey,
-        SummonFiend,
-        ReaperForm,
-        Wildfire,
-        EssenceOfWind,
-        DryadAllure,
-        EtherealVoyage,
-        WordOfDeath,
-        GiftOfLife,
-        ArcaneEmpowermen,
-        NetherBolt,
-        HealingStone,
-        PurgeMagic,
-        Enchant,
-        Sleep,
-        EagleStrike,
-        AnimatedWeapon,
-        StoneForm,
-        SpellTrigger,
-        MassSleep,
-        CleansingWinds,
-        Bombard,
-        SpellPlague,
-        HailStorm,
-        NetherCyclone,
-        RisingColossus,
-        Inspire,
-        Invigorate,
-        Resilience,
-        Perseverance,
-        Tribulation,
-        Despair,
-        Hostile, //Select Next/Preveous/Nearest group
+        Hostile = 205, //Select Next/Preveous/Nearest group
         Party,
         Follower,
         Object,
@@ -2784,8 +2678,8 @@ namespace ClassicUO.Game.Managers
         
         
         
-        TargetNone = 5000, // OUO starts here
+        /*TargetNone = 5000, // OUO starts here
         TargetLast,
-        TargetSelf,
+        TargetSelf,*/
     }
 }

@@ -211,9 +211,15 @@ namespace ClassicUO.Game.UI.Controls
             ushort height
         )
         {
+            ref readonly var gumpInfo = ref Client.Game.UO.Gumps.GetGump(Graphic);
             X = x;
             Y = y;
             Graphic = graphic;
+
+            if (width == 0)
+                width = (ushort) (gumpInfo.UV.Width - sx);
+            if (height == 0)
+                height = (ushort) (gumpInfo.UV.Height - sy);
             Width = width;
             Height = height;
             _picInPicBounds = new Rectangle(sx, sy, Width, Height);
@@ -248,7 +254,8 @@ namespace ClassicUO.Game.UI.Controls
 
             ref readonly var gumpInfo = ref Client.Game.UO.Gumps.GetGump(Graphic);
 
-            var sourceBounds = new Rectangle(gumpInfo.UV.X + _picInPicBounds.X, gumpInfo.UV.Y + _picInPicBounds.Y, _picInPicBounds.Width, _picInPicBounds.Height);
+            var sourceBounds = new Rectangle(
+                gumpInfo.UV.X + _picInPicBounds.X, gumpInfo.UV.Y + _picInPicBounds.Y, _picInPicBounds.Width, _picInPicBounds.Height);
 
             if (gumpInfo.Texture != null)
             {

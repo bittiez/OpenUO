@@ -76,7 +76,7 @@ namespace ClassicUO.Game.UI.Gumps
                         EnhancedBuffGump gump = UIManager.GetGump<EnhancedBuffGump>();
                         gump?.Dispose();
 
-                        UIManager.Add(new EnhancedBuffGump(Mouse.Position.X, Mouse.Position.Y));
+                        UIManager.Add(new EnhancedBuffGump(World, Mouse.Position.X, Mouse.Position.Y));
                     }
                     else
                     {
@@ -84,7 +84,7 @@ namespace ClassicUO.Game.UI.Gumps
 
                         if (gump == null)
                         {
-                            UIManager.Add(new BuffGump(100, 100));
+                            UIManager.Add(new BuffGump(World, 100, 100));
                         }
                         else
                         {

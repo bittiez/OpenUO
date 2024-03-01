@@ -778,7 +778,7 @@ namespace ClassicUO.Game.GameObjects
                     }
 
                     int maxDelay =
-                        MovementSpeed.TimeToCompleteMovement(run, mounted)
+                        MovementSpeed.TimeToCompleteMovement(this, run, mounted)
                         - (int)Client.Game.FrameDelay[1];
 
                     bool removeStep = delay >= maxDelay;

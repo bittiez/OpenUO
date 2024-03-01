@@ -627,17 +627,17 @@ namespace ClassicUO.Game.Scenes
                         switch (obj)
                         {
                             case Entity ent:
-                                TargetManager.Target(ent.Serial);
+                                _world.TargetManager.Target(ent.Serial);
 
                                 break;
 
                             case Land land:
-                                TargetManager.Target(0, land.X, land.Y, land.Z);
+                                _world.TargetManager.Target(0, land.X, land.Y, land.Z);
 
                                 break;
 
                             case GameObject o:
-                                TargetManager.Target(o.Graphic, o.X, o.Y, o.Z);
+                                _world.TargetManager.Target(o.Graphic, o.X, o.Y, o.Z);
 
                                 break;
                         }
@@ -706,9 +706,9 @@ namespace ClassicUO.Game.Scenes
                     case CursorTarget.FriendTarget:
                         if (SelectedObject.Object is Entity mEntity)
                         {
-                            FriendManager.AddFriendTarget(mEntity);
+                            _world.FriendManager.AddFriendTarget(mEntity);
                         }
-                        TargetManager.CancelTarget();
+                        _world.TargetManager.CancelTarget();
                         break;
                 }
             }

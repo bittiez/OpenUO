@@ -185,30 +185,24 @@ namespace ClassicUO.Game.Managers
 
         public readonly LastTargetInfo LastTargetInfo = new LastTargetInfo();
 
-        public static readonly LastTargetInfo LastTargetInfo = new LastTargetInfo();
-        public static readonly LastTargetInfo LastBeneficialTargetInfo = new LastTargetInfo();
+        public readonly LastTargetInfo LastBeneficialTargetInfo = new LastTargetInfo();
 
-        public static MultiTargetInfo MultiTargetInfo { get; set; }
+        public MultiTargetInfo MultiTargetInfo { get; set; }
 
-        public static CursorTarget TargetingState { get; set; } = CursorTarget.Invalid;
-
-        public CursorTarget TargetingState { get; private set; } = CursorTarget.Invalid;
+        public CursorTarget TargetingState { get; set; } = CursorTarget.Invalid;
 
         public bool IsTargeting { get; private set; }
 
         public TargetType TargetingType { get; private set; }
+        public object ExtraDetails { get; private set; }
+        public bool IsAoE { get; private set; }
+        public int AoEType { get; private set; }
+        public uint Preview { get; private set; }
+        public ushort PreviewHue { get; private set; }
 
-        private void ClearTargetingWithoutTargetCancelPacket()
-        public static TargetType TargetingType { get; private set; }
-        public static object ExtraDetails { get; private set; }
-        public static bool IsAoE { get; private set; }
-        public static int AoEType { get; private set; }
-        public static uint Preview { get; private set; }
-        public static ushort PreviewHue { get; private set; }
+        public List<StoredTarget> StoredTargets { get; set; } = new List<StoredTarget>();
 
-        public static List<StoredTarget> StoredTargets { get; set; } = new List<StoredTarget>();
-
-        public static void StoreTarget()
+        public void StoreTarget()
         {
             if (IsTargeting)
             {
@@ -220,7 +214,7 @@ namespace ClassicUO.Game.Managers
             
         }
 
-        public static void RestoreTarget()
+        public void RestoreTarget()
         {
             if (StoredTargets.Count > 0)
             {
@@ -241,7 +235,7 @@ namespace ClassicUO.Game.Managers
             }
         }
 
-        private static void ClearTargetingWithoutTargetCancelPacket(bool restore = true)
+        private void ClearTargetingWithoutTargetCancelPacket(bool restore = true)
         {
             if (TargetingState == CursorTarget.MultiPlacement)
             {
@@ -279,7 +273,7 @@ namespace ClassicUO.Game.Managers
             RestoreTarget();
         }
         
-        public static void SetExtra(uint cursorID, ushort type, object details, uint preview, ushort previewHue)
+        public void SetExtra(uint cursorID, ushort type, object details, uint preview, ushort previewHue)
         {
             IsAoE = true;
             AoEType = type;
@@ -317,15 +311,15 @@ namespace ClassicUO.Game.Managers
             _targetCursorId = cursorID;
         }
         
-        private static ushort zHue = 0x20;
-        private static DateTime LastChange;
-        private static Rectangle m_OldRect;
+        private ushort zHue = 0x20;
+        private DateTime LastChange;
+        private Rectangle m_OldRect;
 
-        public static bool AreaOfEffectHighlight(int x, int y, HighlightType highlightType, out ushort hue)
+        public bool AreaOfEffectHighlight(int x, int y, HighlightType highlightType, out ushort hue)
         {
             hue = 0;
 
-            if (ProfileManager.CurrentProfile.ShowAoEArea && TargetManager.IsAoE)
+            if (ProfileManager.CurrentProfile.ShowAoEArea && IsAoE)
             {
                 int locX = -200, locY = -200;
 
@@ -357,9 +351,9 @@ namespace ClassicUO.Game.Managers
                 {
                     
                     bool inRange = false;
-                    if (TargetManager.AoEType == 0)
+                    if (AoEType == 0)
                     {
-                        var range = (int)(ushort)TargetManager.ExtraDetails;
+                        var range = (int)(ushort)ExtraDetails;
                         var rect = new Rectangle(-range, -range, range * 2 + 1, range * 2 + 1);
 
                         if (rect.Contains(locX - x, locY - y))
@@ -367,14 +361,14 @@ namespace ClassicUO.Game.Managers
                             inRange = true;
                         }
                     } 
-                    else if (TargetManager.AoEType == 1)
+                    else if (AoEType == 1)
                     {
-                        var range = (int)(ushort)TargetManager.ExtraDetails;
+                        var range = (int)(ushort)ExtraDetails;
                         double dist = Math.Sqrt(Math.Pow(x - locX,2) + Math.Pow(y - locY,2));
                         dist = (int) dist;
                         inRange = dist <= range;
                     }
-                    else if (TargetManager.AoEType == 2) // rect from point to mouse
+                    else if (AoEType == 2) // rect from point to mouse
                     {
                         var pos = (Vector3)ExtraDetails;
                         int topLeftX = Math.Min(locX, (int)pos.X) - 1;
@@ -386,7 +380,7 @@ namespace ClassicUO.Game.Managers
                         if (rect.Contains(x - 1, y - 1))
                             inRange = true;
                     }
-                    else if (TargetManager.AoEType == 3)
+                    else if (AoEType == 3)
                     {
                         var pos = (Vector3)ExtraDetails;
                         var posZ = (int) pos.Z;
@@ -404,10 +398,10 @@ namespace ClassicUO.Game.Managers
                             //if (rect.Contains(x - 1, y - 1))
                             //    inRange = true;
 
-                            if (!World.HouseManager.TryGetHouse(0, out House house))
+                            if (!_world.HouseManager.TryGetHouse(0, out House house))
                             {
-                                house = new House(0, 0, false);
-                                World.HouseManager.Add(0, house);
+                                house = new House(_world, 0, 0, false);
+                                _world.HouseManager.Add(0, house);
                             }
                             else
                             {
@@ -449,11 +443,11 @@ namespace ClassicUO.Game.Managers
                             }
                         }
                     }
-                    else if (TargetManager.AoEType == 0x99) // fields..
+                    else if (AoEType == 0x99) // fields..
                     {
-                        var range = (int)(ushort)TargetManager.ExtraDetails;
-                        int dx = World.Player.X - locX;
-                        int dy = World.Player.Y - locY;
+                        var range = (int)(ushort)ExtraDetails;
+                        int dx = _world.Player.X - locX;
+                        int dy = _world.Player.Y - locY;
                         int rx = (dx - dy) * 44;
                         int ry = (dx + dy) * 44;
 
@@ -502,9 +496,9 @@ namespace ClassicUO.Game.Managers
 
                            ushort highlightHue = currentProfile.NeutralAOEHue;
 
-                           if (TargetManager.TargetingType == TargetType.Beneficial)
+                           if (TargetingType == TargetType.Beneficial)
                                highlightHue = currentProfile.BeneficialAOEHue;
-                           else if (TargetManager.TargetingType == TargetType.Harmful)
+                           else if (TargetingType == TargetType.Harmful)
                                highlightHue = currentProfile.HarmfulAOEHue;
 
                            hue = highlightHue;
@@ -584,7 +578,7 @@ namespace ClassicUO.Game.Managers
             );
         }
 
-        public static bool SplitLastTargets => World.Settings.ClientOptionFlags.AllowSplitTargetsOptions && 
+        public bool SplitLastTargets => _world.Settings.ClientOptionFlags.AllowSplitTargetsOptions && 
                                                   ProfileManager.CurrentProfile != null && 
                                                   ProfileManager.CurrentProfile.SplitLastTarget;
         
@@ -754,25 +748,25 @@ namespace ClassicUO.Game.Managers
                     case CursorTarget.FriendTarget:
                         if (SelectedObject.Object is Entity mEntity)
                         {
-                            FriendManager.AddFriendTarget(mEntity);
+                            _world.FriendManager.AddFriendTarget(mEntity);
                         }
                         CancelTarget();
                         return;
                 }
             }
-            else if (World.Settings.ClientOptionFlags.AllowOffscreenTargeting &&
+            else if (_world.Settings.ClientOptionFlags.AllowOffscreenTargeting &&
                      ProfileManager.CurrentProfile != null && ProfileManager.CurrentProfile.OffscreenTargeting)
             {
-                if (World.Settings.ClientOptionFlags.AllowSplitTargetsOptions && 
+                if (_world.Settings.ClientOptionFlags.AllowSplitTargetsOptions && 
                     SplitLastTargets && TargetingType == TargetType.Beneficial)
                 {
                     LastBeneficialTargetInfo.SetEntity(serial);
-                    World.Player.AddMessage(MessageType.Label, "beneficial last target set", TextType.CLIENT);
+                    _world.Player.AddMessage(MessageType.Label, "beneficial last target set", TextType.CLIENT);
                 }
                 else
                 {
                     LastTargetInfo.SetEntity(serial);
-                    World.Player.AddMessage(MessageType.Label, "last target set", TextType.CLIENT);
+                    _world.Player.AddMessage(MessageType.Label, "last target set", TextType.CLIENT);
                 }
 
             }

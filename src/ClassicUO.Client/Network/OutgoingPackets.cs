@@ -1276,6 +1276,53 @@ namespace ClassicUO.Network
             writer.Dispose();
         }
 
+        
+        public static void Send_OpenUOHello(this NetClient socket)
+        {
+            const byte ID = 0xC3;
+
+            int length = PacketsTable.GetPacketLength(ID);
+
+            StackDataWriter writer = new StackDataWriter(length < 0 ? 64 : length);
+
+            writer.WriteUInt8(ID); // OpenUOEnhanced
+
+            if (length < 0)
+            {
+                writer.WriteZero(2);
+            }
+
+            writer.WriteUInt16BE(0x0); //packetID
+            writer.WriteUInt16BE(0);   // version
+            string[] splits = CUOEnviroment.Version.Split('.');
+            
+
+            short major = short.Parse(splits[0]); 
+            short minor = short.Parse(splits[1]);
+            short build = short.Parse(splits[2]);
+            //byte extra = (byte) clientVersion;
+            #if DEBUG
+            writer.WriteBool(true);
+            #else
+            writer.WriteBool(false);
+            #endif
+            //writer.WriteUInt32BE(int.MaxValue);
+            writer.WriteInt16BE(major);
+            writer.WriteInt16BE(minor);
+            writer.WriteInt16BE(build);
+            if (length < 0)
+            {
+                writer.Seek(1, SeekOrigin.Begin);
+                writer.WriteUInt16BE((ushort)writer.BytesWritten);
+            }
+            else
+            {
+                writer.WriteZero(length - writer.BytesWritten);
+            }
+
+            socket.Send(writer.BufferWritten);
+            writer.Dispose();
+        }
 
 
 

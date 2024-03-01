@@ -196,8 +196,8 @@ namespace ClassicUO.Game.Managers
 
         private (Point?, AnchorableGump) GetAnchorDirection(AnchorableGump draggedControl, AnchorableGump host)
         {
-            int xdistancescale = Math.Abs(draggedControl.X - host.X) * 100 / host.Width;
-            int ydistancescale = Math.Abs(draggedControl.Y - host.Y) * 100 / host.Height;
+            int xdistancescale = Math.Abs(draggedControl.X - host.X) * 100 / Math.Max(1,host.Width);
+            int ydistancescale = Math.Abs(draggedControl.Y - host.Y) * 100 / Math.Max(1,host.Height);
 
             if (xdistancescale > ydistancescale)
             {

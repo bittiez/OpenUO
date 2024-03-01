@@ -103,7 +103,7 @@ namespace ClassicUO.Game.UI.Gumps
             table.Add(new Tuple<bool, int, string>(false, (int)Buttons.Debug, cliloc.GetString(1042237, ResGumps.Debug)));
             table.Add(new Tuple<bool, int, string>(true, (int)Buttons.NetStats, cliloc.GetString(3000169, ResGumps.NetStats)));
             
-            bool hasUOStore = Client.Version >= ClientVersion.CV_706400;
+            bool hasUOStore = Client.Game.UO.Version >= ClientVersion.CV_706400;
 
             if (hasUOStore)
             {
@@ -184,7 +184,7 @@ namespace ClassicUO.Game.UI.Gumps
 
             UIManager.Add
             (
-                gump = new TopBarGump
+                gump = new TopBarGump(world)
                 {
                     X = ProfileManager.CurrentProfile.TopbarGumpPosition.X,
                     Y = ProfileManager.CurrentProfile.TopbarGumpPosition.Y
@@ -262,7 +262,7 @@ namespace ClassicUO.Game.UI.Gumps
                 
                 case Buttons.Cooldowns:
                 {
-                    GameActions.OpenCooldowns();
+                    GameActions.OpenCooldowns(World);
                     break;
                 }
 
@@ -273,7 +273,7 @@ namespace ClassicUO.Game.UI.Gumps
                     }
                     else
                     {
-                        if (Client.Version >= ClientVersion.CV_706400)
+                        if (Client.Game.UO.Version >= ClientVersion.CV_706400)
                         {
                             NetClient.Socket.Send_OpenUOStore();
                         }

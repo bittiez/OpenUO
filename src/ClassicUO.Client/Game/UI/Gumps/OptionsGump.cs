@@ -3794,7 +3794,7 @@ namespace ClassicUO.Game.UI.Gumps
                     // If other IgnoreManagerGump exist - Dispose it
                     UIManager.GetGump<FriendManagerGump>()?.Dispose();
                     // Open new
-                    UIManager.Add(new FriendManagerGump());
+                    UIManager.Add(new FriendManagerGump(World));
                     break;
             }
         }

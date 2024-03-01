@@ -80,8 +80,8 @@ namespace ClassicUO
             const int LIGHTS_TEXTURE_WIDTH = 32;
             const int LIGHTS_TEXTURE_HEIGHT = 63;
                 // https://github.com/FNA-XNA/FNA/wiki/7:-FNA-Environment-Variables#fna_graphics_enable_highdpi
-            ArtLoader.Instance.Game = Game;
-            GumpsLoader.Instance.Game = Game;
+            ArtLoader.Instance.Game = game;
+            GumpsLoader.Instance.Game = game;
 
             var hueSamplers = new Texture2D[3];
             hueSamplers[0] = new Texture2D(game.GraphicsDevice, TEXTURE_WIDTH, TEXTURE_HEIGHT);

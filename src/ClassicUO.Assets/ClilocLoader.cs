@@ -73,19 +73,19 @@ namespace ClassicUO.Assets
 
                 _cliloc = "Cliloc.enu";
             }
-#if DEBUG
+//#if DEBUG TODO: Create a cliloc file for OUO
             LoadClientClilocs();
-#endif
+//#endif
             return Load();
         }
         
-#if DEBUG
+//#if DEBUG
         /// <summary>
         /// Temporary Solution until custom cliloc solution is made
         /// </summary>
         public void LoadClientClilocs()
         {
-            var toLoad = ConfigurationResolver.Load<DebugClilocs>("../../src/ClassicUO.Client/Clilocs.json");
+            var toLoad = ConfigurationResolver.Load<DebugClilocs>("Clilocs.json");
 
             foreach (var cliloc in toLoad.clilocs)
             {
@@ -138,7 +138,7 @@ namespace ClassicUO.Assets
             public int id { get; set; }
             public string data { get; set; }
         }
-#endif        
+//#endif        
         public override Task Load()
         {
             return Task.Run
